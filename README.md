@@ -14,6 +14,12 @@ Steam Web API and pairs every achievement with the help you need to finish it:
   YouTube / Google guide searches for every achievement in every game.
 - **Filters** — search, locked/unlocked, missable-only, and sorting by rarity, name, or most
   recent unlocks.
+- **Overview dashboard** — every game's completion at a glance, sorted by how close you are
+  to 100%.
+- **Sub-checklists** — tick off the individual items inside collect-them-all achievements
+  (legendary armaments, tail cuts, scrolls, quest steps); progress is saved locally.
+- **Zero-friction setup** — your SteamID is auto-detected from the local Steam client;
+  you only paste an API key.
 
 ## Supported games
 
@@ -35,8 +41,9 @@ Steam Web API and pairs every achievement with the help you need to finish it:
 2. **Make your game details public**: Steam → Profile → Edit Profile → Privacy Settings →
    set *Game details* to **Public**. Without this, the app still shows the full achievement
    lists and global rarity, but not your personal progress.
-3. Run the app, open **Settings**, paste the API key, and enter your SteamID64, custom URL
-   name, or full profile URL. Hit **Connect & scan**.
+3. Run the app and open **Settings** — your Steam account is usually pre-detected from the
+   local Steam client, so just paste the API key and hit **Connect & scan**. (You can also
+   enter any SteamID64, custom URL name, or full profile URL manually.)
 
 ## Build & run
 

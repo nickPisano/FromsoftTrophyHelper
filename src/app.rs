@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::sync::mpsc::{Receiver, Sender};
 
 use eframe::egui;
@@ -14,6 +14,8 @@ const ORANGE: egui::Color32 = egui::Color32::from_rgb(240, 170, 80);
 const BLUE: egui::Color32 = egui::Color32::from_rgb(120, 170, 240);
 const PURPLE: egui::Color32 = egui::Color32::from_rgb(190, 140, 240);
 const DIM: egui::Color32 = egui::Color32::from_rgb(150, 150, 150);
+
+const OVERVIEW_LABEL: &str = "\u{2302} Overview — all games";
 
 #[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
 struct Settings {
@@ -59,13 +61,17 @@ pub struct App {
     settings_open: bool,
     connect_status: Option<Result<String, String>>,
     resolving: bool,
+    detected: Option<steam::LocalAccount>,
 
     tx: Sender<Msg>,
     rx: Receiver<Msg>,
 
     data: HashMap<u32, Loaded>,
-    selected_game: usize,
+    /// `None` = the all-games overview dashboard.
+    selected_game: Option<usize>,
     selected_ach: HashMap<u32, String>,
+    /// Ticked sub-checklist items, keyed by "appid/api_name". Persisted.
+    checklist_done: HashMap<String, BTreeSet<usize>>,
 
     search: String,
     status_filter: StatusFilter,
@@ -86,7 +92,20 @@ impl App {
             .storage
             .and_then(|s| eframe::get_value(s, "settings"))
             .unwrap_or_default();
+        let checklist_done: HashMap<String, BTreeSet<usize>> = cc
+            .storage
+            .and_then(|s| eframe::get_value(s, "checklists"))
+            .unwrap_or_default();
         let settings_open = settings.api_key.is_empty() || settings.steam_id.is_empty();
+
+        // Prefill the account field from the local Steam client install.
+        let detected = steam::detect_local_account();
+        let mut settings = settings;
+        if settings.steam_input.is_empty()
+            && let Some(acc) = &detected
+        {
+            settings.steam_input = acc.steamid.clone();
+        }
 
         let (tx, rx) = std::sync::mpsc::channel();
         Self {
@@ -94,11 +113,13 @@ impl App {
             settings_open,
             connect_status: None,
             resolving: false,
+            detected,
             tx,
             rx,
             data: HashMap::new(),
-            selected_game: 0,
+            selected_game: None,
             selected_ach: HashMap::new(),
+            checklist_done,
             search: String::new(),
             status_filter: StatusFilter::All,
             missable_only: false,
@@ -110,8 +131,8 @@ impl App {
         !self.settings.api_key.is_empty() && !self.settings.steam_id.is_empty()
     }
 
-    fn current_appid(&self) -> u32 {
-        GAMES[self.selected_game].appid
+    fn current_appid(&self) -> Option<u32> {
+        self.selected_game.map(|i| GAMES[i].appid)
     }
 
     fn poll_messages(&mut self) {
@@ -122,8 +143,7 @@ impl App {
                     match result {
                         Ok(id) => {
                             self.settings.steam_id = id.clone();
-                            self.connect_status =
-                                Some(Ok(format!("Connected as SteamID {id}")));
+                            self.connect_status = Some(Ok(format!("Connected as SteamID {id}")));
                         }
                         Err(e) => self.connect_status = Some(Err(e)),
                     }
@@ -140,9 +160,23 @@ impl App {
     }
 
     fn ensure_loaded(&mut self, ctx: &egui::Context) {
-        let appid = self.current_appid();
-        if self.connected() && !self.data.contains_key(&appid) {
-            self.data.insert(appid, Loaded::Loading);
+        if !self.connected() {
+            return;
+        }
+        match self.current_appid() {
+            Some(appid) => self.ensure_game_loaded(ctx, appid),
+            // Dashboard: everything.
+            None => {
+                for g in GAMES {
+                    self.ensure_game_loaded(ctx, g.appid);
+                }
+            }
+        }
+    }
+
+    fn ensure_game_loaded(&mut self, ctx: &egui::Context, appid: u32) {
+        if let std::collections::hash_map::Entry::Vacant(entry) = self.data.entry(appid) {
+            entry.insert(Loaded::Loading);
             steam::spawn_fetch_game(
                 self.tx.clone(),
                 ctx.clone(),
@@ -162,8 +196,9 @@ impl App {
         self.settings.api_key = self.settings.api_key.trim().to_string();
         match steam::parse_steam_input(&self.settings.steam_input) {
             steam::SteamInput::Empty => {
-                self.connect_status =
-                    Some(Err("Enter your SteamID64, custom URL name, or profile URL.".into()));
+                self.connect_status = Some(Err(
+                    "Enter your SteamID64, custom URL name, or profile URL.".into(),
+                ));
             }
             steam::SteamInput::Id(id) => {
                 self.settings.steam_id = id.clone();
@@ -185,8 +220,12 @@ impl App {
     }
 
     fn refresh(&mut self, ctx: &egui::Context) {
-        let appid = self.current_appid();
-        self.data.remove(&appid);
+        match self.current_appid() {
+            Some(appid) => {
+                self.data.remove(&appid);
+            }
+            None => self.data.clear(),
+        }
         self.ensure_loaded(ctx);
     }
 
@@ -206,11 +245,16 @@ impl App {
 
                 let prev = self.selected_game;
                 egui::ComboBox::from_id_salt("game_select")
-                    .selected_text(GAMES[self.selected_game].title)
+                    .selected_text(match self.selected_game {
+                        None => OVERVIEW_LABEL,
+                        Some(i) => GAMES[i].title,
+                    })
                     .width(300.0)
                     .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut self.selected_game, None, OVERVIEW_LABEL);
+                        ui.separator();
                         for (i, g) in GAMES.iter().enumerate() {
-                            ui.selectable_value(&mut self.selected_game, i, g.title);
+                            ui.selectable_value(&mut self.selected_game, Some(i), g.title);
                         }
                     });
                 if prev != self.selected_game {
@@ -231,12 +275,9 @@ impl App {
                     }
                     if self.connected() {
                         ui.label(
-                            egui::RichText::new(format!(
-                                "\u{1F7E2} {}",
-                                self.settings.steam_id
-                            ))
-                            .color(GREEN)
-                            .small(),
+                            egui::RichText::new(format!("\u{1F7E2} {}", self.settings.steam_id))
+                                .color(GREEN)
+                                .small(),
                         );
                     } else {
                         ui.label(
@@ -289,6 +330,27 @@ impl App {
                         .desired_width(300.0)
                         .hint_text("SteamID64, custom URL name, or full profile URL"),
                 );
+                if let Some(acc) = self.detected.clone() {
+                    ui.horizontal(|ui| {
+                        let who = if acc.persona.is_empty() {
+                            acc.steamid.clone()
+                        } else {
+                            format!("{} ({})", acc.persona, acc.steamid)
+                        };
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "\u{1F50D} Detected from your Steam client: {who}"
+                            ))
+                            .small()
+                            .color(GREEN),
+                        );
+                        if self.settings.steam_input != acc.steamid
+                            && ui.small_button("Use this account").clicked()
+                        {
+                            self.settings.steam_input = acc.steamid;
+                        }
+                    });
+                }
                 ui.label(
                     egui::RichText::new(
                         "Your profile's \"Game details\" must be public for progress to show \
@@ -328,7 +390,9 @@ impl App {
     }
 
     fn left_panel(&mut self, ui: &mut egui::Ui) {
-        let appid = self.current_appid();
+        let Some(appid) = self.current_appid() else {
+            return; // Dashboard has no achievement list panel.
+        };
         egui::Panel::left("ach_list")
             .resizable(true)
             .default_size(430.0)
@@ -347,8 +411,16 @@ impl App {
                 });
                 ui.horizontal(|ui| {
                     ui.selectable_value(&mut self.status_filter, StatusFilter::All, "All");
-                    ui.selectable_value(&mut self.status_filter, StatusFilter::Locked, "\u{1F512} Locked");
-                    ui.selectable_value(&mut self.status_filter, StatusFilter::Unlocked, "\u{2714} Unlocked");
+                    ui.selectable_value(
+                        &mut self.status_filter,
+                        StatusFilter::Locked,
+                        "\u{1F512} Locked",
+                    );
+                    ui.selectable_value(
+                        &mut self.status_filter,
+                        StatusFilter::Unlocked,
+                        "\u{2714} Unlocked",
+                    );
                     ui.separator();
                     ui.checkbox(&mut self.missable_only, "\u{26A0} Missable only");
                 });
@@ -444,7 +516,8 @@ impl App {
                                 for row in rows {
                                     let selected =
                                         current_sel.as_deref() == Some(row.api_name.as_str());
-                                    if ach_list_row(ui, appid, row, selected) {
+                                    if ach_list_row(ui, appid, row, selected, &self.checklist_done)
+                                    {
                                         clicked = Some(row.api_name.clone());
                                     }
                                 }
@@ -459,27 +532,186 @@ impl App {
     }
 
     fn central_panel(&mut self, ui: &mut egui::Ui) {
-        let appid = self.current_appid();
-        let game = &GAMES[self.selected_game];
+        let Some(gi) = self.selected_game else {
+            self.dashboard(ui);
+            return;
+        };
+        let game = &GAMES[gi];
+        let appid = game.appid;
         let selected: Option<AchRow> = match (self.data.get(&appid), self.selected_ach.get(&appid))
         {
-            (Some(Loaded::Ready(gd)), Some(sel)) => gd
-                .achievements
-                .iter()
-                .find(|a| &a.api_name == sel)
-                .cloned(),
+            (Some(Loaded::Ready(gd)), Some(sel)) => {
+                gd.achievements.iter().find(|a| &a.api_name == sel).cloned()
+            }
             _ => None,
         };
 
         egui::CentralPanel::default().show(ui, |ui| {
-            egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
-                match selected {
-                    Some(row) => ach_details(ui, game, &row),
+            egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| match selected {
+                    Some(row) => ach_details(ui, game, &row, &mut self.checklist_done),
                     None => game_overview(ui, game, self.connected(), &mut self.settings_open),
-                }
-            });
+                });
         });
     }
+}
+
+impl App {
+    fn dashboard(&mut self, ui: &mut egui::Ui) {
+        let connected = self.connected();
+        let mut clicked: Option<usize> = None;
+        let mut open_settings = false;
+
+        egui::CentralPanel::default().show(ui, |ui| {
+            egui::ScrollArea::vertical()
+                .auto_shrink(false)
+                .show(ui, |ui| {
+                    ui.add_space(10.0);
+                    ui.label(
+                        egui::RichText::new("Your 100% hunt at a glance")
+                            .heading()
+                            .color(GOLD),
+                    );
+                    if !connected {
+                        ui.add_space(4.0);
+                        ui.horizontal(|ui| {
+                            ui.label("Connect your Steam account to scan your collection.");
+                            if ui.button("\u{2699} Open Settings").clicked() {
+                                open_settings = true;
+                            }
+                        });
+                    } else {
+                        ui.label(
+                            egui::RichText::new(
+                                "Sorted by how close you are to 100%. Click a game to dig in.",
+                            )
+                            .small()
+                            .color(DIM),
+                        );
+                    }
+                    ui.add_space(10.0);
+
+                    // Completion fraction for sorting; no-data games sink to the bottom
+                    // in catalog order.
+                    let frac = |i: &usize| -> f32 {
+                        match self.data.get(&GAMES[*i].appid) {
+                            Some(Loaded::Ready(gd))
+                                if gd.player_error.is_none() && !gd.achievements.is_empty() =>
+                            {
+                                let unlocked = gd
+                                    .achievements
+                                    .iter()
+                                    .filter(|a| a.unlocked == Some(true))
+                                    .count();
+                                unlocked as f32 / gd.achievements.len() as f32
+                            }
+                            Some(Loaded::Ready(_)) => -1.0,
+                            _ => -2.0,
+                        }
+                    };
+                    let mut order: Vec<usize> = (0..GAMES.len()).collect();
+                    order.sort_by(|a, b| {
+                        frac(b)
+                            .partial_cmp(&frac(a))
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    });
+
+                    for i in order {
+                        let game = &GAMES[i];
+                        if game_card(ui, game, self.data.get(&game.appid)) {
+                            clicked = Some(i);
+                        }
+                        ui.add_space(6.0);
+                    }
+                });
+        });
+
+        if open_settings {
+            self.settings_open = true;
+        }
+        if let Some(i) = clicked {
+            self.selected_game = Some(i);
+        }
+    }
+}
+
+/// One dashboard card. Returns true when clicked.
+fn game_card(ui: &mut egui::Ui, game: &games::Game, state: Option<&Loaded>) -> bool {
+    let resp = egui::Frame::group(ui.style())
+        .inner_margin(12.0)
+        .corner_radius(8.0)
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.label(egui::RichText::new(game.title).strong().size(16.0));
+            ui.add_space(4.0);
+            match state {
+                Some(Loaded::Ready(gd)) => {
+                    let total = gd.achievements.len();
+                    let unlocked = gd
+                        .achievements
+                        .iter()
+                        .filter(|a| a.unlocked == Some(true))
+                        .count();
+                    if gd.player_error.is_none() && total > 0 {
+                        let f = unlocked as f32 / total as f32;
+                        ui.horizontal(|ui| {
+                            ui.add(
+                                egui::ProgressBar::new(f)
+                                    .desired_width(260.0)
+                                    .desired_height(12.0),
+                            );
+                            let pct = egui::RichText::new(format!(
+                                "{unlocked} / {total}  ({:.0}%)",
+                                f * 100.0
+                            ))
+                            .strong();
+                            ui.label(if f >= 1.0 { pct.color(GOLD) } else { pct });
+                            if f >= 1.0 {
+                                ui.label(egui::RichText::new("\u{1F3C6} 100%!").color(GOLD));
+                            }
+                        });
+                        if let Some(t) = gd.achievements.iter().filter_map(|a| a.unlock_time).max()
+                        {
+                            ui.label(
+                                egui::RichText::new(format!("Last unlock: {}", format_unix(t)))
+                                    .small()
+                                    .color(DIM),
+                            );
+                        }
+                    } else {
+                        ui.label(
+                            egui::RichText::new(format!(
+                                "\u{26A0} Global stats only — {}",
+                                gd.player_error.as_deref().unwrap_or("no player data")
+                            ))
+                            .small()
+                            .color(ORANGE),
+                        );
+                    }
+                }
+                Some(Loaded::Loading) => {
+                    ui.horizontal(|ui| {
+                        ui.spinner();
+                        ui.label(egui::RichText::new("Scanning…").color(DIM));
+                    });
+                }
+                Some(Loaded::Failed(e)) => {
+                    ui.label(egui::RichText::new(e.as_str()).small().color(RED));
+                }
+                None => {
+                    ui.label(
+                        egui::RichText::new("Not scanned — connect Steam in Settings")
+                            .small()
+                            .color(DIM),
+                    );
+                }
+            }
+        })
+        .response;
+
+    let resp = resp.interact(egui::Sense::click());
+    resp.clicked()
 }
 
 impl eframe::App for App {
@@ -495,13 +727,20 @@ impl eframe::App for App {
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, "settings", &self.settings);
+        eframe::set_value(storage, "checklists", &self.checklist_done);
     }
 }
 
 // ---------------------------------------------------------------------- UI helpers
 
 /// Returns true when the row was clicked.
-fn ach_list_row(ui: &mut egui::Ui, appid: u32, row: &AchRow, selected: bool) -> bool {
+fn ach_list_row(
+    ui: &mut egui::Ui,
+    appid: u32,
+    row: &AchRow,
+    selected: bool,
+    checklist_done: &HashMap<String, BTreeSet<usize>>,
+) -> bool {
     let guide = guides::find(appid, &row.name);
     let unlocked = row.unlocked == Some(true);
 
@@ -554,12 +793,25 @@ fn ach_list_row(ui: &mut egui::Ui, appid: u32, row: &AchRow, selected: bool) -> 
                                     .desired_width(90.0)
                                     .desired_height(9.0),
                             );
-                            ui.label(
-                                egui::RichText::new(format!("{p:.1}%"))
-                                    .small()
-                                    .color(DIM),
-                            );
+                            ui.label(egui::RichText::new(format!("{p:.1}%")).small().color(DIM));
                             ui.label(egui::RichText::new(rarity).small().color(color));
+                        }
+                        if let Some(g) = guide
+                            && !g.checklist.is_empty()
+                            && !unlocked
+                        {
+                            let key = format!("{}/{}", appid, row.api_name);
+                            let n = checklist_done.get(&key).map(|s| s.len()).unwrap_or(0);
+                            if n > 0 {
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "\u{2611} {n}/{}",
+                                        g.checklist.len()
+                                    ))
+                                    .small()
+                                    .color(BLUE),
+                                );
+                            }
                         }
                     });
                 });
@@ -571,7 +823,12 @@ fn ach_list_row(ui: &mut egui::Ui, appid: u32, row: &AchRow, selected: bool) -> 
     resp.clicked()
 }
 
-fn ach_details(ui: &mut egui::Ui, game: &games::Game, row: &AchRow) {
+fn ach_details(
+    ui: &mut egui::Ui,
+    game: &games::Game,
+    row: &AchRow,
+    checklist_done: &mut HashMap<String, BTreeSet<usize>>,
+) {
     let guide = guides::find(game.appid, &row.name);
 
     ui.add_space(8.0);
@@ -592,7 +849,11 @@ fn ach_details(ui: &mut egui::Ui, game: &games::Game, row: &AchRow) {
             ui.horizontal(|ui| {
                 ui.label(egui::RichText::new(&row.name).heading().color(GOLD));
                 if guide.is_some_and(|g| g.missable) {
-                    ui.label(egui::RichText::new("\u{26A0} MISSABLE").strong().color(ORANGE));
+                    ui.label(
+                        egui::RichText::new("\u{26A0} MISSABLE")
+                            .strong()
+                            .color(ORANGE),
+                    );
                 }
             });
             if row.description.is_empty() && row.hidden {
@@ -613,9 +874,7 @@ fn ach_details(ui: &mut egui::Ui, game: &games::Game, row: &AchRow) {
                         .unlock_time
                         .map(|t| format!(" on {}", format_unix(t)))
                         .unwrap_or_default();
-                    ui.label(
-                        egui::RichText::new(format!("\u{2714} Unlocked{when}")).color(GREEN),
-                    );
+                    ui.label(egui::RichText::new(format!("\u{2714} Unlocked{when}")).color(GREEN));
                 }
                 Some(false) => {
                     ui.label(egui::RichText::new("\u{1F512} Locked").color(DIM));
@@ -674,6 +933,38 @@ fn ach_details(ui: &mut egui::Ui, game: &games::Game, row: &AchRow) {
                 bullet(ui, l);
             }
         }
+        if !g.checklist.is_empty() {
+            ui.add_space(8.0);
+            let key = format!("{}/{}", game.appid, row.api_name);
+            let done = checklist_done.entry(key).or_default();
+            let unlocked = row.unlocked == Some(true);
+            let header = format!(
+                "\u{2611} Checklist — {}/{} done",
+                done.len(),
+                g.checklist.len()
+            );
+            egui::CollapsingHeader::new(egui::RichText::new(header).strong())
+                .default_open(!unlocked)
+                .show(ui, |ui| {
+                    ui.label(
+                        egui::RichText::new(
+                            "Tracked locally on this computer — Steam can't see partial progress.",
+                        )
+                        .small()
+                        .color(DIM),
+                    );
+                    for (i, item) in g.checklist.iter().enumerate() {
+                        let mut checked = done.contains(&i);
+                        if ui.checkbox(&mut checked, *item).changed() {
+                            if checked {
+                                done.insert(i);
+                            } else {
+                                done.remove(&i);
+                            }
+                        }
+                    }
+                });
+        }
         if !g.resources.is_empty() {
             ui.add_space(8.0);
             ui.label(egui::RichText::new("\u{1F4D6} Hand-picked resources").strong());
@@ -714,12 +1005,7 @@ fn ach_details(ui: &mut egui::Ui, game: &games::Game, row: &AchRow) {
         });
 }
 
-fn game_overview(
-    ui: &mut egui::Ui,
-    game: &games::Game,
-    connected: bool,
-    settings_open: &mut bool,
-) {
+fn game_overview(ui: &mut egui::Ui, game: &games::Game, connected: bool, settings_open: &mut bool) {
     ui.add_space(12.0);
     ui.label(egui::RichText::new(game.title).heading().color(GOLD));
     ui.add_space(4.0);
@@ -791,8 +1077,7 @@ fn filter_sort<'a>(
                 StatusFilter::All => true,
                 StatusFilter::Locked => a.unlocked != Some(true),
                 StatusFilter::Unlocked => a.unlocked == Some(true),
-            }) && (!missable_only
-                || guides::find(appid, &a.name).is_some_and(|g| g.missable))
+            }) && (!missable_only || guides::find(appid, &a.name).is_some_and(|g| g.missable))
                 && (needle.is_empty()
                     || a.name.to_lowercase().contains(&needle)
                     || a.description.to_lowercase().contains(&needle))
@@ -812,12 +1097,10 @@ fn filter_sort<'a>(
                 .partial_cmp(&b.percent.unwrap_or(101.0))
                 .unwrap_or(std::cmp::Ordering::Equal)
         }),
-        SortBy::Name => rows.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase())),
-        SortBy::RecentUnlocks => rows.sort_by(|a, b| {
-            b.unlock_time
-                .unwrap_or(0)
-                .cmp(&a.unlock_time.unwrap_or(0))
-        }),
+        SortBy::Name => rows.sort_by_key(|a| a.name.to_lowercase()),
+        SortBy::RecentUnlocks => {
+            rows.sort_by_key(|a| std::cmp::Reverse(a.unlock_time.unwrap_or(0)))
+        }
     }
     rows
 }
@@ -895,7 +1178,7 @@ mod tests {
 
     #[test]
     fn steam_input_parsing() {
-        use crate::steam::{parse_steam_input, SteamInput};
+        use crate::steam::{SteamInput, parse_steam_input};
         assert!(matches!(
             parse_steam_input("76561198000000000"),
             SteamInput::Id(id) if id == "76561198000000000"
@@ -924,6 +1207,13 @@ mod tests {
             (335300, "Master of Hexes", false),
             (236430, "Master of Hexes", false), // original DS2 shares guides
             (211420, "Knight's Honor", true),   // PTDE shares DS1R guides
+            (1245620, "Shardbearer Radahn", false),
+            (1245620, "Great Rune", false),
+            (570940, "Covenant: Blade of the Darkmoon", true),
+            (570940, "Covenant: Gravelord Servant", false),
+            (374320, "Covenant: Mound-makers", true),
+            (374320, "Covenant: Aldrich Faithful", false),
+            (814380, "Peak Physical Strength", false),
         ] {
             let g = crate::guides::find(appid, name)
                 .unwrap_or_else(|| panic!("no guide matched {appid} / {name}"));

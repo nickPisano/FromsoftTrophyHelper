@@ -11,8 +11,13 @@ const API: &str = "https://api.steampowered.com";
 
 /// Messages sent from worker threads back to the UI thread.
 pub enum Msg {
-    Resolved { result: Result<String, String> },
-    Game { appid: u32, result: Result<GameData, String> },
+    Resolved {
+        result: Result<String, String>,
+    },
+    Game {
+        appid: u32,
+        result: Result<GameData, String>,
+    },
 }
 
 /// One achievement, merged from the game schema, the global unlock
@@ -44,6 +49,80 @@ pub enum SteamInput {
     Id(String),
     Vanity(String),
     Empty,
+}
+
+/// A Steam account signed into this computer's Steam client, discovered
+/// from `loginusers.vdf`.
+#[derive(Clone, Debug)]
+pub struct LocalAccount {
+    pub steamid: String,
+    pub persona: String,
+    pub most_recent: bool,
+}
+
+/// Best local account to prefill: the one Steam signed in last, else the
+/// first found. Returns None when no Steam client install is detected.
+pub fn detect_local_account() -> Option<LocalAccount> {
+    let vdf = login_vdf_paths()
+        .iter()
+        .find_map(|p| std::fs::read_to_string(p).ok())?;
+    let accounts = parse_loginusers(&vdf);
+    accounts
+        .iter()
+        .find(|a| a.most_recent)
+        .or_else(|| accounts.first())
+        .cloned()
+}
+
+fn login_vdf_paths() -> Vec<std::path::PathBuf> {
+    let mut paths = Vec::new();
+    if let Some(home) = std::env::var_os("HOME") {
+        let home = std::path::PathBuf::from(home);
+        if cfg!(target_os = "macos") {
+            paths.push(home.join("Library/Application Support/Steam/config/loginusers.vdf"));
+        }
+        paths.push(home.join(".steam/steam/config/loginusers.vdf"));
+        paths.push(home.join(".local/share/Steam/config/loginusers.vdf"));
+    }
+    if cfg!(windows) {
+        if let Some(pf) = std::env::var_os("ProgramFiles(x86)") {
+            paths.push(std::path::PathBuf::from(pf).join(r"Steam\config\loginusers.vdf"));
+        }
+        paths.push(std::path::PathBuf::from(
+            r"C:\Program Files (x86)\Steam\config\loginusers.vdf",
+        ));
+    }
+    paths
+}
+
+/// Minimal parser for Steam's loginusers.vdf: SteamID64 section headers with
+/// quoted key/value pairs inside.
+pub fn parse_loginusers(vdf: &str) -> Vec<LocalAccount> {
+    let mut out: Vec<LocalAccount> = Vec::new();
+    for line in vdf.lines() {
+        // Quoted tokens are the odd-numbered fields after splitting on '"'.
+        let tokens: Vec<&str> = line.split('"').skip(1).step_by(2).collect();
+        match tokens.as_slice() {
+            [id] if id.len() == 17 && id.chars().all(|c| c.is_ascii_digit()) => {
+                out.push(LocalAccount {
+                    steamid: id.to_string(),
+                    persona: String::new(),
+                    most_recent: false,
+                });
+            }
+            [key, value] => {
+                if let Some(acc) = out.last_mut() {
+                    if key.eq_ignore_ascii_case("PersonaName") {
+                        acc.persona = value.to_string();
+                    } else if key.eq_ignore_ascii_case("MostRecent") {
+                        acc.most_recent = *value == "1";
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    out
 }
 
 /// Accepts a SteamID64, a custom-URL (vanity) name, or a full profile URL.
@@ -107,7 +186,8 @@ fn resolve_vanity(key: &str, vanity: &str) -> Result<String, String> {
 
 fn fetch_game(key: &str, steamid: &str, appid: u32) -> Result<GameData, String> {
     // 1. Achievement schema: names, descriptions, icons.
-    let url = format!("{API}/ISteamUserStats/GetSchemaForGame/v2/?key={key}&appid={appid}&l=english");
+    let url =
+        format!("{API}/ISteamUserStats/GetSchemaForGame/v2/?key={key}&appid={appid}&l=english");
     let schema = get_json(&url).map_err(|e| format!("Failed to load achievement list: {e}"))?;
     let schema_achs = schema["game"]["availableGameStats"]["achievements"]
         .as_array()
@@ -140,21 +220,21 @@ fn fetch_game(key: &str, steamid: &str, appid: u32) -> Result<GameData, String> 
     let url = format!(
         "{API}/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v0002/?gameid={appid}&format=json"
     );
-    if let Ok(global) = get_json(&url) {
-        if let Some(arr) = global["achievementpercentages"]["achievements"].as_array() {
-            let map: HashMap<String, f32> = arr
-                .iter()
-                .filter_map(|a| {
-                    let name = a["name"].as_str()?.to_string();
-                    let pct = a["percent"]
-                        .as_f64()
-                        .or_else(|| a["percent"].as_str()?.parse().ok())?;
-                    Some((name, pct as f32))
-                })
-                .collect();
-            for r in &mut rows {
-                r.percent = map.get(&r.api_name).copied();
-            }
+    if let Ok(global) = get_json(&url)
+        && let Some(arr) = global["achievementpercentages"]["achievements"].as_array()
+    {
+        let map: HashMap<String, f32> = arr
+            .iter()
+            .filter_map(|a| {
+                let name = a["name"].as_str()?.to_string();
+                let pct = a["percent"]
+                    .as_f64()
+                    .or_else(|| a["percent"].as_str()?.parse().ok())?;
+                Some((name, pct as f32))
+            })
+            .collect();
+        for r in &mut rows {
+            r.percent = map.get(&r.api_name).copied();
         }
     }
 
@@ -233,11 +313,7 @@ fn get_json(url: &str) -> Result<serde_json::Value, String> {
             let body = resp.into_string().unwrap_or_default();
             let detail = serde_json::from_str::<serde_json::Value>(&body)
                 .ok()
-                .and_then(|v| {
-                    v["playerstats"]["error"]
-                        .as_str()
-                        .map(|s| s.to_string())
-                })
+                .and_then(|v| v["playerstats"]["error"].as_str().map(|s| s.to_string()))
                 .unwrap_or_default();
             match code {
                 401 | 403 => Err(
@@ -249,5 +325,38 @@ fn get_json(url: &str) -> Result<serde_json::Value, String> {
             }
         }
         Err(e) => Err(format!("Network error: {e}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_loginusers;
+
+    #[test]
+    fn parses_loginusers_vdf() {
+        let vdf = r#"
+"users"
+{
+	"76561198011111111"
+	{
+		"AccountName"		"olduser"
+		"PersonaName"		"Old User"
+		"MostRecent"		"0"
+	}
+	"76561198022222222"
+	{
+		"AccountName"		"newuser"
+		"PersonaName"		"Ashen One"
+		"mostrecent"		"1"
+	}
+}
+"#;
+        let accounts = parse_loginusers(vdf);
+        assert_eq!(accounts.len(), 2);
+        assert_eq!(accounts[0].steamid, "76561198011111111");
+        assert_eq!(accounts[0].persona, "Old User");
+        assert!(!accounts[0].most_recent);
+        assert_eq!(accounts[1].persona, "Ashen One");
+        assert!(accounts[1].most_recent);
     }
 }

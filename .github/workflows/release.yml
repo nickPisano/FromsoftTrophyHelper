@@ -59,19 +59,43 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package (macOS / Windows zip)
-        if: runner.os != 'Linux'
+      - name: Package (Windows zip)
+        if: runner.os == 'Windows'
         shell: bash
         run: |
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
           ASSET="$BIN-$TAG-${{ matrix.name }}.zip"
           cd "target/${{ matrix.target }}/release"
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            7z a "$ASSET" "$BIN.exe"
-          else
-            zip "$ASSET" "$BIN"
-          fi
+          7z a "$ASSET" "$BIN.exe"
           echo "ASSET=target/${{ matrix.target }}/release/$ASSET" >> "$GITHUB_ENV"
+
+      - name: Package (macOS .app bundle)
+        if: runner.os == 'macOS'
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          ASSET="$BIN-$TAG-${{ matrix.name }}.zip"
+          APP="FromSoft Trophy Helper.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          cp "target/${{ matrix.target }}/release/$BIN" "$APP/Contents/MacOS/"
+          cp assets/icon.icns "$APP/Contents/Resources/icon.icns"
+          cat > "$APP/Contents/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key><string>FromSoft Trophy Helper</string>
+            <key>CFBundleDisplayName</key><string>FromSoft Trophy Helper</string>
+            <key>CFBundleIdentifier</key><string>com.nickpisano.fromsoft-trophy-helper</string>
+            <key>CFBundleExecutable</key><string>$BIN</string>
+            <key>CFBundleIconFile</key><string>icon</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>${TAG#v}</string>
+            <key>NSHighResolutionCapable</key><true/>
+          </dict>
+          </plist>
+          PLIST
+          zip -r "$ASSET" "$APP"
+          echo "ASSET=$ASSET" >> "$GITHUB_ENV"
 
       - name: Package (Linux tar.gz)
         if: runner.os == 'Linux'

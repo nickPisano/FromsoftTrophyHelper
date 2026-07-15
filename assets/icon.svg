@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- FromSoft Trophy Helper app icon: gold sword-and-laurel trophy on slate -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2620"/>
+      <stop offset="1" stop-color="#15120d"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8c977"/>
+      <stop offset="1" stop-color="#b08a3e"/>
+    </linearGradient>
+  </defs>
+  <rect x="32" y="32" width="960" height="960" rx="200" fill="url(#bg)"/>
+  <rect x="52" y="52" width="920" height="920" rx="184" fill="none" stroke="#d6b56a" stroke-opacity="0.35" stroke-width="10"/>
+
+  <!-- laurel arcs -->
+  <g stroke="url(#gold)" stroke-width="34" fill="none" stroke-linecap="round">
+    <path d="M 250 640 A 280 280 0 0 0 512 820"/>
+    <path d="M 774 640 A 280 280 0 0 1 512 820"/>
+  </g>
+  <!-- laurel leaves -->
+  <g fill="url(#gold)">
+    <ellipse cx="262" cy="600" rx="26" ry="58" transform="rotate(-30 262 600)"/>
+    <ellipse cx="310" cy="700" rx="26" ry="58" transform="rotate(-52 310 700)"/>
+    <ellipse cx="396" cy="778" rx="26" ry="58" transform="rotate(-72 396 778)"/>
+    <ellipse cx="762" cy="600" rx="26" ry="58" transform="rotate(30 762 600)"/>
+    <ellipse cx="714" cy="700" rx="26" ry="58" transform="rotate(52 714 700)"/>
+    <ellipse cx="628" cy="778" rx="26" ry="58" transform="rotate(72 628 778)"/>
+  </g>
+
+  <!-- greatsword, point up -->
+  <g fill="url(#gold)">
+    <!-- blade -->
+    <path d="M 512 120 L 552 210 L 544 560 L 480 560 L 472 210 Z"/>
+    <!-- fuller line -->
+    <rect x="504" y="200" width="16" height="330" fill="#15120d" fill-opacity="0.55"/>
+    <!-- crossguard -->
+    <path d="M 372 560 L 652 560 L 676 604 L 348 604 Z"/>
+    <!-- grip -->
+    <rect x="488" y="604" width="48" height="120" rx="14"/>
+    <!-- pommel -->
+    <circle cx="512" cy="760" r="42"/>
+  </g>
+</svg>

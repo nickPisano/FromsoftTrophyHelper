@@ -22,9 +22,18 @@ pub const GAMES: &[Game] = &[
             "Achievement progress is account-wide and pops the moment the condition is met, even in NG+.",
         ],
         resources: &[
-            Resource { label: "Fextralife Elden Ring Wiki (interactive map, checklists)", url: "https://eldenring.wiki.fextralife.com/Elden+Ring+Wiki" },
-            Resource { label: "PowerPyx — Elden Ring 100% Achievement Guide & Roadmap", url: "https://www.powerpyx.com/elden-ring-trophy-guide-roadmap/" },
-            Resource { label: "Steam Community guides for Elden Ring", url: "https://steamcommunity.com/app/1245620/guides/" },
+            Resource {
+                label: "Fextralife Elden Ring Wiki (interactive map, checklists)",
+                url: "https://eldenring.wiki.fextralife.com/Elden+Ring+Wiki",
+            },
+            Resource {
+                label: "PowerPyx — Elden Ring 100% Achievement Guide & Roadmap",
+                url: "https://www.powerpyx.com/elden-ring-trophy-guide-roadmap/",
+            },
+            Resource {
+                label: "Steam Community guides for Elden Ring",
+                url: "https://steamcommunity.com/app/1245620/guides/",
+            },
         ],
     },
     Game {
@@ -37,9 +46,18 @@ pub const GAMES: &[Game] = &[
             "Covenant spell/item rewards (Sunlight Medals, Proofs of a Concord Kept, Wolf's Blood Swordgrass) count toward the spell achievements and can all be farmed offline from specific enemies.",
         ],
         resources: &[
-            Resource { label: "Fextralife Dark Souls III Wiki", url: "https://darksouls3.wiki.fextralife.com/Dark+Souls+3+Wiki" },
-            Resource { label: "Dark Souls III Wikidot (clean checklists)", url: "http://darksouls3.wikidot.com/" },
-            Resource { label: "Steam Community guides for Dark Souls III", url: "https://steamcommunity.com/app/374320/guides/" },
+            Resource {
+                label: "Fextralife Dark Souls III Wiki",
+                url: "https://darksouls3.wiki.fextralife.com/Dark+Souls+3+Wiki",
+            },
+            Resource {
+                label: "Dark Souls III Wikidot (clean checklists)",
+                url: "http://darksouls3.wikidot.com/",
+            },
+            Resource {
+                label: "Steam Community guides for Dark Souls III",
+                url: "https://steamcommunity.com/app/374320/guides/",
+            },
         ],
     },
     Game {
@@ -52,9 +70,18 @@ pub const GAMES: &[Game] = &[
             "Save backups are the accepted way to shorten the road to 100%: copy the save folder before each point of no return.",
         ],
         resources: &[
-            Resource { label: "Fextralife Sekiro Wiki", url: "https://sekiroshadowsdietwice.wiki.fextralife.com/Sekiro+Wiki" },
-            Resource { label: "PowerPyx — Sekiro 100% Guide & Roadmap", url: "https://www.powerpyx.com/sekiro-shadows-die-twice-trophy-guide-roadmap/" },
-            Resource { label: "Steam Community guides for Sekiro", url: "https://steamcommunity.com/app/814380/guides/" },
+            Resource {
+                label: "Fextralife Sekiro Wiki",
+                url: "https://sekiroshadowsdietwice.wiki.fextralife.com/Sekiro+Shadows+Die+Twice+Wiki",
+            },
+            Resource {
+                label: "PowerPyx — Sekiro 100% Guide & Roadmap",
+                url: "https://www.powerpyx.com/sekiro-shadows-die-twice-trophy-guide-roadmap/",
+            },
+            Resource {
+                label: "Steam Community guides for Sekiro",
+                url: "https://steamcommunity.com/app/814380/guides/",
+            },
         ],
     },
     Game {
@@ -66,9 +93,18 @@ pub const GAMES: &[Game] = &[
             "Nothing is permanently missable: you can replay any mission from the mission select once cleared.",
         ],
         resources: &[
-            Resource { label: "Fextralife Armored Core VI Wiki", url: "https://armoredcore6.wiki.fextralife.com/Armored+Core+VI+Wiki" },
-            Resource { label: "PowerPyx — AC6 100% Guide & Roadmap", url: "https://www.powerpyx.com/armored-core-6-fires-of-rubicon-trophy-guide-roadmap/" },
-            Resource { label: "Steam Community guides for Armored Core VI", url: "https://steamcommunity.com/app/1888160/guides/" },
+            Resource {
+                label: "Fextralife Armored Core VI Wiki",
+                url: "https://armoredcore6.wiki.fextralife.com/",
+            },
+            Resource {
+                label: "Fextralife — AC6 Trophy & Achievement Guide",
+                url: "https://armoredcore6.wiki.fextralife.com/Trophy+%26+Achievement+Guide",
+            },
+            Resource {
+                label: "Steam Community guides for Armored Core VI",
+                url: "https://steamcommunity.com/app/1888160/guides/",
+            },
         ],
     },
     Game {
@@ -81,9 +117,18 @@ pub const GAMES: &[Game] = &[
             "Several NPC vendors (Logan, Laurentius, Reah) can die or go hollow — buy out their spell stock as soon as you can afford it.",
         ],
         resources: &[
-            Resource { label: "Fextralife Dark Souls Wiki", url: "https://darksouls.wiki.fextralife.com/Dark+Souls+Wiki" },
-            Resource { label: "Dark Souls Wikidot (clean checklists)", url: "http://darksouls.wikidot.com/" },
-            Resource { label: "Steam Community guides for Dark Souls: Remastered", url: "https://steamcommunity.com/app/570940/guides/" },
+            Resource {
+                label: "Fextralife Dark Souls Wiki",
+                url: "https://darksouls.wiki.fextralife.com/Dark+Souls+Wiki",
+            },
+            Resource {
+                label: "Dark Souls Wikidot (clean checklists)",
+                url: "http://darksouls.wikidot.com/",
+            },
+            Resource {
+                label: "Steam Community guides for Dark Souls: Remastered",
+                url: "https://steamcommunity.com/app/570940/guides/",
+            },
         ],
     },
     Game {
@@ -95,9 +140,18 @@ pub const GAMES: &[Game] = &[
             "Buy out spell vendors (Logan, Laurentius, Reah) before their questlines can kill or hollow them.",
         ],
         resources: &[
-            Resource { label: "Fextralife Dark Souls Wiki", url: "https://darksouls.wiki.fextralife.com/Dark+Souls+Wiki" },
-            Resource { label: "Dark Souls Wikidot (clean checklists)", url: "http://darksouls.wikidot.com/" },
-            Resource { label: "Steam Community guides for Prepare to Die Edition", url: "https://steamcommunity.com/app/211420/guides/" },
+            Resource {
+                label: "Fextralife Dark Souls Wiki",
+                url: "https://darksouls.wiki.fextralife.com/Dark+Souls+Wiki",
+            },
+            Resource {
+                label: "Dark Souls Wikidot (clean checklists)",
+                url: "http://darksouls.wikidot.com/",
+            },
+            Resource {
+                label: "Steam Community guides for Prepare to Die Edition",
+                url: "https://steamcommunity.com/app/211420/guides/",
+            },
         ],
     },
     Game {
@@ -110,9 +164,18 @@ pub const GAMES: &[Game] = &[
             "Nothing is permanently missable thanks to Bonfire Ascetics — but they raise that bonfire's area difficulty permanently for the cycle.",
         ],
         resources: &[
-            Resource { label: "Fextralife Dark Souls II Wiki", url: "https://darksouls2.wiki.fextralife.com/Dark+Souls+2+Wiki" },
-            Resource { label: "Dark Souls II Wikidot (clean checklists)", url: "http://darksouls2.wikidot.com/" },
-            Resource { label: "Steam Community guides for DS2: SOTFS", url: "https://steamcommunity.com/app/335300/guides/" },
+            Resource {
+                label: "Fextralife Dark Souls II Wiki",
+                url: "https://darksouls2.wiki.fextralife.com/Dark+Souls+2+Wiki",
+            },
+            Resource {
+                label: "Dark Souls II Wikidot (clean checklists)",
+                url: "http://darksouls2.wikidot.com/",
+            },
+            Resource {
+                label: "Steam Community guides for DS2: SOTFS",
+                url: "https://steamcommunity.com/app/335300/guides/",
+            },
         ],
     },
     Game {
@@ -123,9 +186,18 @@ pub const GAMES: &[Game] = &[
             "If you own both versions, achievements track separately per version.",
         ],
         resources: &[
-            Resource { label: "Fextralife Dark Souls II Wiki", url: "https://darksouls2.wiki.fextralife.com/Dark+Souls+2+Wiki" },
-            Resource { label: "Dark Souls II Wikidot (clean checklists)", url: "http://darksouls2.wikidot.com/" },
-            Resource { label: "Steam Community guides for Dark Souls II", url: "https://steamcommunity.com/app/236430/guides/" },
+            Resource {
+                label: "Fextralife Dark Souls II Wiki",
+                url: "https://darksouls2.wiki.fextralife.com/Dark+Souls+2+Wiki",
+            },
+            Resource {
+                label: "Dark Souls II Wikidot (clean checklists)",
+                url: "http://darksouls2.wikidot.com/",
+            },
+            Resource {
+                label: "Steam Community guides for Dark Souls II",
+                url: "https://steamcommunity.com/app/236430/guides/",
+            },
         ],
     },
 ];
