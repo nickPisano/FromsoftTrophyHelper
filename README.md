@@ -20,6 +20,15 @@ Steam Web API and pairs every achievement with the help you need to finish it:
   (legendary armaments, tail cuts, scrolls, quest steps); progress is saved locally.
 - **Zero-friction setup** — your SteamID is auto-detected from the local Steam client;
   you only paste an API key.
+- **Instant startup** — the last scan is cached locally, so the app opens with your data
+  immediately (and works offline); stale games re-scan in the background.
+- **Live unlock notifications** — with auto-rescan on, a desktop notification and in-app
+  toast fire when a new achievement pops mid-session.
+- **Personal notes** — a private notes box on every achievement, saved locally.
+- **Playthrough planner** — a per-game roadmap grouping achievements by the earliest
+  run they land in (NG → NG+ → NG++ → multiple-run endings).
+- **FromSoft-flavored UI** — custom dark/gold theme, serif display font (Cinzel, OFL),
+  and Steam artwork on the dashboard and game pages.
 
 ## Supported games
 

@@ -23,6 +23,9 @@ pub struct Guide {
     pub rules: &'static [&'static str],
     /// Places you'll need to be.
     pub locations: &'static [&'static str],
+    /// Earliest playthrough phase this realistically completes in:
+    /// "" (anytime), "NG", "NG+", "NG++", or "Multiple runs".
+    pub phase: &'static str,
     /// Discrete tickable sub-items for collect-them-all achievements.
     /// Checked state is persisted locally by the app.
     pub checklist: &'static [&'static str],
@@ -72,6 +75,7 @@ static GUIDES: &[Guide] = &[
             "Grand Cloister → Astel, Naturalborn of the Void",
             "Moonlight Altar — Cathedral of Manus Celes (give Ranni the Dark Moon Ring)",
         ],
+        phase: "Multiple runs",
         checklist: &[],
         resources: &[
             Resource {
@@ -99,6 +103,7 @@ static GUIDES: &[Guide] = &[
             "Hidden path: hit the altar behind Mohg's arena, then descend the platforming section to the Frenzied Flame Proscription",
             "Crumbling Farum Azula — Dragonlord Placidusax arena (only place Miquella's Needle can be used)",
         ],
+        phase: "Multiple runs",
         checklist: &[],
         resources: &[
             Resource {
@@ -120,6 +125,7 @@ static GUIDES: &[Guide] = &[
             "Only blocked if you're locked into the Frenzied Flame — cure it with Miquella's Needle or avoid the Three Fingers entirely.",
         ],
         locations: &["Leyndell, Ashen Capital — Elden Throne, after Radagon / Elden Beast"],
+        phase: "Multiple runs",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Endings overview",
@@ -147,6 +153,7 @@ static GUIDES: &[Guide] = &[
             "Dark Moon Greatsword — Ranni's questline finale",
             "Devourer's Scepter — Knight Bernahl",
         ],
+        phase: "NG",
         checklist: &[
             "Grafted Blade Greatsword (Castle Morne)",
             "Sword of Night and Flame (Caria Manor)",
@@ -185,6 +192,7 @@ static GUIDES: &[Guide] = &[
             "Greyoll's Roar — Cathedral of Dragon Communion, Caelid",
             "Elden Stars — Deeproot Depths",
         ],
+        phase: "NG",
         checklist: &[
             "Comet Azur (Hermit Village, Mt. Gelmir)",
             "Stars of Ruin (Master Lusat, Sellia Hideaway)",
@@ -223,6 +231,7 @@ static GUIDES: &[Guide] = &[
             "Old Lord's Talisman — Crumbling Farum Azula",
             "Erdtree's Favor +2 — Leyndell, Ashen Capital",
         ],
+        phase: "NG",
         checklist: &[
             "Radagon Icon (Raya Lucaria Academy)",
             "Radagon's Soreseal (Fort Faroth)",
@@ -254,6 +263,7 @@ static GUIDES: &[Guide] = &[
             "Ancient Dragon Knight Kristoff — Sainted Hero's Grave, Altus Plateau",
             "Cleanrot Knight Finlay — Elphael, Brace of the Haligtree",
         ],
+        phase: "NG",
         checklist: &[
             "Mimic Tear Ashes (Night's Sacred Ground, Nokron)",
             "Black Knife Tiche (Ringleader's Evergaol)",
@@ -278,6 +288,7 @@ static GUIDES: &[Guide] = &[
             "Mohgwyn Palace — beneath Caelid / reached from Consecrated Snowfield portal",
             "Varre quest start — Rose Church, Liurnia",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[
             Resource {
@@ -304,6 +315,7 @@ static GUIDES: &[Guide] = &[
             "Ordina, Liturgical Town — Consecrated Snowfield (evergaol puzzle)",
             "Malenia — Elphael, Brace of the Haligtree (bottom)",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Malenia, Blade of Miquella",
@@ -330,6 +342,7 @@ static GUIDES: &[Guide] = &[
             "Darkmoon Tomb (behind illusory wall below Anor Londo) — the ceremony",
             "Kiln of the First Flame — the ending itself",
         ],
+        phase: "Multiple runs",
         checklist: &[],
         resources: &[
             Resource {
@@ -356,6 +369,7 @@ static GUIDES: &[Guide] = &[
             "Illusory wall in the dark Firelink Shrine — Eyes of a Fire Keeper",
             "Kiln of the First Flame — summon sign after the final boss",
         ],
+        phase: "Multiple runs",
         checklist: &[],
         resources: &[
             Resource {
@@ -380,6 +394,7 @@ static GUIDES: &[Guide] = &[
         locations: &[
             "Everywhere — use a per-playthrough checklist (link below) and sweep +1/+2 spots on each NG lap",
         ],
+        phase: "NG++",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Rings list (with NG+ locations)",
@@ -401,6 +416,7 @@ static GUIDES: &[Guide] = &[
             "Lothric Castle — Sunlight Medal farming",
             "Braille tomes — Farron Keep swamp, Carthus Catacombs, and beyond",
         ],
+        phase: "NG",
         checklist: &[
             "Braille Divine Tome of Carim (Road of Sacrifices)",
             "Braille Divine Tome of Lothric (Lothric Castle)",
@@ -430,6 +446,7 @@ static GUIDES: &[Guide] = &[
             "Smouldering Lake — Logan's Scroll (demon cleric on the ridge)",
             "Grand Archives — Crystal Scroll",
         ],
+        phase: "NG",
         checklist: &[
             "Sage's Scroll (Crucifixion Woods crab lake)",
             "Golden Scroll (Farron Keep dark cave)",
@@ -463,6 +480,7 @@ static GUIDES: &[Guide] = &[
             "Irithyll Dungeon — free Karla (cell key from the Jailbreaker's area)",
             "Tomes — Undead Settlement, Catacombs of Carthus, Smouldering Lake, Grand Archives",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Pyromancies list (who gets which tome)",
@@ -479,6 +497,7 @@ static GUIDES: &[Guide] = &[
         locations: &[
             "Scattered across every region — the wiki checklist below has all of them with screenshots",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[
             Resource {
@@ -503,6 +522,7 @@ static GUIDES: &[Guide] = &[
             "This choice locks out the other three endings for the playthrough — most players do Shura as a short second run (it's only a few hours with routing) or back up the save before the choice.",
         ],
         locations: &["Ashina Castle rooftop — the choice with Great Shinobi Owl"],
+        phase: "Multiple runs",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Sekiro endings",
@@ -523,6 +543,7 @@ static GUIDES: &[Guide] = &[
             "Hirata Estate (second memory) — Owl (Father) boss",
             "Fountainhead Palace → final sequence — choose Purification",
         ],
+        phase: "Multiple runs",
         checklist: &[
             "Refused Owl at the Ashina Castle rooftop",
             "All Kuro / Emma eavesdrops completed",
@@ -550,6 +571,7 @@ static GUIDES: &[Guide] = &[
             "Sunken Valley / Great Serpent cave — Fresh Serpent Viscera",
             "Senpou Temple depths — Dried Serpent Viscera",
         ],
+        phase: "Multiple runs",
         checklist: &[
             "Rice given to the Divine Child (repeat until quest advances)",
             "Holy Chapter: Infested obtained",
@@ -572,6 +594,7 @@ static GUIDES: &[Guide] = &[
             "Includes all optional bosses: Demon of Hatred, Great Shinobi Owl, Owl (Father), Headless Ape rematch, and both Hirata memories.",
         ],
         locations: &["Everywhere — use a full boss checklist and tick them per playthrough"],
+        phase: "Multiple runs",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Bosses checklist",
@@ -590,6 +613,7 @@ static GUIDES: &[Guide] = &[
             "Ashina Castle — Tengu of Ashina (rat mission → esoteric text)",
             "Senpou Temple, Fountainhead Palace — remaining texts (see checklist)",
         ],
+        phase: "NG+",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Skills & esoteric texts",
@@ -608,6 +632,7 @@ static GUIDES: &[Guide] = &[
             "Fountainhead Palace — Lapis Lazuli sources",
             "Full tool + upgrade material checklist on the wiki",
         ],
+        phase: "NG+",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Prosthetic tools & upgrades",
@@ -626,6 +651,7 @@ static GUIDES: &[Guide] = &[
             "You can replay via NG+ to pick the other branch — decision missions are clearly marked with mutually exclusive choices.",
         ],
         locations: &["Chapter 4-5 decision missions — pick the 'Fires of Raven' branch"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — AC6 endings & decision missions",
@@ -640,6 +666,7 @@ static GUIDES: &[Guide] = &[
             "The counterpart branch to Fires of Raven — side with Ayre when the decision missions split. Take whichever you skipped on your other run via NG+.",
         ],
         locations: &["Chapter 4-5 decision missions — pick the 'Liberator of Rubicon' branch"],
+        phase: "NG+",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — AC6 endings & decision missions",
@@ -655,6 +682,7 @@ static GUIDES: &[Guide] = &[
             "You must make the specific new-mission choices in NG++ — follow a mission-order guide so you don't have to run a fourth lap.",
         ],
         locations: &["NG++ exclusive missions across all chapters"],
+        phase: "NG++",
         checklist: &[],
         resources: &[
             Resource {
@@ -678,6 +706,7 @@ static GUIDES: &[Guide] = &[
         locations: &[
             "Parts Shop (buy everything), Arena rewards, hidden containers — full checklist on the wiki",
         ],
+        phase: "NG++",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — AC6 Trophy Guide (all-parts section)",
@@ -693,6 +722,7 @@ static GUIDES: &[Guide] = &[
             "Use the Loghunt list from the ALLMIND terminal to track tiers; replaying a mission lets you re-grab any log you missed.",
         ],
         locations: &["Marked enemies across missions — full per-mission log list on the wiki"],
+        phase: "NG++",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Combat Logs per mission",
@@ -716,6 +746,7 @@ static GUIDES: &[Guide] = &[
             "Tail cuts — Painted World (Priscilla), Duke's Archives (Seath), Undead Parish/Anor Londo (Gargoyles), Sanctuary Garden & Royal Wood (DLC)",
             "Full 49-weapon checklist on the wiki",
         ],
+        phase: "NG++",
         checklist: &[
             "Tail cut: Priscilla's Dagger (Painted World)",
             "Tail cut: Moonlight Greatsword (Seath, Duke's Archives)",
@@ -743,6 +774,7 @@ static GUIDES: &[Guide] = &[
             "New Londo Ruins → The Abyss (requires the Covenant of Artorias ring from Sif)",
             "Kaathe appears after the Four Kings die (if Frampt hasn't been served)",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Darkwraith covenant",
@@ -764,6 +796,7 @@ static GUIDES: &[Guide] = &[
             "The Duke's Archives — Logan's second cell + hollow Logan (Seath's arena)",
             "Darkroot Basin — Dusk (Crystal Golem rescue)",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[
             Resource {
@@ -791,6 +824,7 @@ static GUIDES: &[Guide] = &[
             "Blighttown swamp — Quelana of Izalith",
             "Quelaag's Domain — Eingyi + Chaos Servant covenant",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Pyromancies checklist",
@@ -811,6 +845,7 @@ static GUIDES: &[Guide] = &[
             "Undead Parish — Reah's vendor window",
             "Covenants — Sunlight altar (Undead Parish), Darkmoon (Anor Londo), Gravelord (Catacombs)",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Miracles checklist",
@@ -833,6 +868,7 @@ static GUIDES: &[Guide] = &[
             "Brightstone Cove Tseldora — Ornifex (trade boss souls)",
             "Majula/No-man's Wharf — Carhillion",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — DS2 Sorceries checklist",
@@ -852,6 +888,7 @@ static GUIDES: &[Guide] = &[
             "Sunlight altar (Heirs of the Sun covenant) — see the wiki for its spot in your version",
             "The Lost Bastille / Brightstone Cove Tseldora — boss-soul miracles",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — DS2 Miracles checklist",
@@ -869,6 +906,7 @@ static GUIDES: &[Guide] = &[
             "Shaded Woods entrance — Rosabeth (petrified)",
             "World pickups — see checklist",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — DS2 Pyromancies checklist",
@@ -888,6 +926,7 @@ static GUIDES: &[Guide] = &[
             "Dark Chasm of Old — three dungeons + Darklurker",
             "Huntsman's Copse — Felkin",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[
             Resource {
@@ -911,6 +950,7 @@ static GUIDES: &[Guide] = &[
             "The first mandatory shardbearer. If he's a wall, explore Limgrave and the Weeping Peninsula first — levels and Ashes of War carry this fight.",
         ],
         locations: &["Stormveil Castle — throne room (Limgrave)"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Godrick the Grafted",
@@ -927,6 +967,7 @@ static GUIDES: &[Guide] = &[
             "Defeating Radahn also makes Nokron (Ranni's questline, Mimic Tear) accessible — you'll be back here for other achievements.",
         ],
         locations: &["Redmane Castle → Wailing Dunes, Caelid"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Starscourge Radahn",
@@ -942,6 +983,7 @@ static GUIDES: &[Guide] = &[
             "Pick up the Serpent-Hunter greatspear ON the arena floor — the fight is balanced around it.",
         ],
         locations: &["Volcano Manor → Mt. Gelmir, Audience Pathway"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Rykard, Lord of Blasphemy",
@@ -957,6 +999,7 @@ static GUIDES: &[Guide] = &[
             "While you're in Leyndell: grab the Bolt of Gransax now if you're chasing Legendary Armaments — the window closes after Maliketh.",
         ],
         locations: &["Leyndell, Royal Capital — Elden Throne approach"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Morgott, the Omen King",
@@ -971,6 +1014,7 @@ static GUIDES: &[Guide] = &[
             "Restore any shardbearer's Great Rune at its Divine Tower (each boss has its own tower — e.g. Godrick's is across the bridge east of Stormveil), then equip it at a site of grace and activate it with a Rune Arc.",
         ],
         locations: &["Divine Towers — Limgrave, Caelid, Liurnia, Leyndell, East Altus"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Great Runes",
@@ -992,6 +1036,7 @@ static GUIDES: &[Guide] = &[
             "The Catacombs — Darkmoon Seance Ring (illusory wall near the second bonfire)",
             "Anor Londo — Darkmoon Tomb below the rotating staircase",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Blade of the Darkmoon",
@@ -1007,6 +1052,7 @@ static GUIDES: &[Guide] = &[
             "Don't attack the Stone Dragon; it's the covenant leader.",
         ],
         locations: &["Blighttown → The Great Hollow → Ash Lake (far end)"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Path of the Dragon",
@@ -1025,6 +1071,7 @@ static GUIDES: &[Guide] = &[
             "Undead Parish — buy the Crest of Artorias from Andre",
             "Darkroot Garden — Alvina's window, past the sealed door",
         ],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Forest Hunter covenant",
@@ -1040,6 +1087,7 @@ static GUIDES: &[Guide] = &[
             "Offering 30 humanity opens the Lost Izalith shortcut — which is also how you save Solaire from the Sunlight Maggot if you care about his questline.",
         ],
         locations: &["Quelaag's Domain — illusory wall behind the boss arena"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Chaos Servant covenant",
@@ -1055,6 +1103,7 @@ static GUIDES: &[Guide] = &[
             "You need an Eye of Death first: three sit in a Catacombs corpse pile near the Titanite Demon.",
         ],
         locations: &["The Catacombs — coffin nook before Nito's domain"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Gravelord Servant covenant",
@@ -1070,6 +1119,7 @@ static GUIDES: &[Guide] = &[
             "Killing Gwynevere (which darkens Anor Londo permanently) locks the covenant for the playthrough — join before any dark deeds.",
         ],
         locations: &["Anor Londo — Gwynevere's chamber, past O&S"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Princess's Guard covenant",
@@ -1084,6 +1134,7 @@ static GUIDES: &[Guide] = &[
             "Pray at the Sunlight Altar (broken statue on the bridge below the Hellkite Drake, Undead Parish side) with 25 Faith — the requirement drops by 5 for each co-op session you've completed as a summon.",
         ],
         locations: &["Undead Parish — Sunlight Altar under the drake bridge"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Warrior of Sunlight covenant",
@@ -1102,6 +1153,7 @@ static GUIDES: &[Guide] = &[
             "Don't attack or kill Yorshka — that locks the covenant for the playthrough.",
         ],
         locations: &["Anor Londo — invisible walkway from the rotating tower to Prison Tower"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Blades of the Darkmoon (DS3)",
@@ -1116,6 +1168,7 @@ static GUIDES: &[Guide] = &[
             "Join via Archdeacon McDonnell, behind an illusory wall in Irithyll's Water Reserve: after Pontiff Sulyvahn, take the stairs down near the two Sulyvahn beasts — the wall is at the back of the room.",
         ],
         locations: &["Irithyll of the Boreal Valley — Water Reserve (post-Pontiff), illusory wall"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Aldrich Faithful",
@@ -1131,6 +1184,7 @@ static GUIDES: &[Guide] = &[
             "If the Greatwood is already dead, the only remaining path is through Sirris' questline (answer her summons at Keep Ruins) — slower and easy to break.",
         ],
         locations: &["Undead Settlement — cage-carrier hollow near the central plaza"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Mound-Makers",
@@ -1147,6 +1201,7 @@ static GUIDES: &[Guide] = &[
             "Leonhard's questline ends with Rosaria's soul being taken — join before finishing his quest.",
         ],
         locations: &["Cathedral of the Deep — Rosaria's Bed Chamber"],
+        phase: "NG",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Rosaria's Fingers",
@@ -1165,6 +1220,7 @@ static GUIDES: &[Guide] = &[
             "Miss any and they carry over: NG+ repeats bead sources, so nothing is permanently lost, but a per-area checklist saves you a full extra playthrough.",
         ],
         locations: &["Everywhere — miniboss checklist per area on the wiki"],
+        phase: "NG+",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — Prayer Bead locations",
@@ -1182,6 +1238,7 @@ static GUIDES: &[Guide] = &[
             "New Arena entrants unlock as the story progresses — and more appear in NG+ and NG++. Sweep the Arena tab every chapter; completion also feeds OS Tuning chips and parts money.",
         ],
         locations: &["ALLMIND Arena tab — check after every chapter, all three playthroughs"],
+        phase: "NG++",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — AC6 Arena",
@@ -1196,6 +1253,7 @@ static GUIDES: &[Guide] = &[
             "Data logs hide inside mission maps (often off the objective path) and some only exist in NG+/NG++ mission variants. Replay missions freely — collection is cumulative.",
         ],
         locations: &["Hidden containers across missions — per-mission list on the wiki"],
+        phase: "NG++",
         checklist: &[],
         resources: &[Resource {
             label: "Fextralife — AC6 log locations (combat & data)",

@@ -4,6 +4,7 @@ mod app;
 mod games;
 mod guides;
 mod steam;
+mod theme;
 
 use eframe::egui;
 

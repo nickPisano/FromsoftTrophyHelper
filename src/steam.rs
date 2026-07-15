@@ -22,7 +22,7 @@ pub enum Msg {
 
 /// One achievement, merged from the game schema, the global unlock
 /// percentages, and (when available) the player's own progress.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct AchRow {
     pub api_name: String,
     pub name: String,
@@ -37,7 +37,7 @@ pub struct AchRow {
     pub unlock_time: Option<i64>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct GameData {
     pub achievements: Vec<AchRow>,
     /// Set when schema/global data loaded but the player's own progress

@@ -6,28 +6,70 @@ use eframe::egui;
 use crate::games::{self, GAMES};
 use crate::guides;
 use crate::steam::{self, AchRow, GameData, Msg};
-
-const GOLD: egui::Color32 = egui::Color32::from_rgb(214, 181, 106);
-const GREEN: egui::Color32 = egui::Color32::from_rgb(120, 200, 130);
-const RED: egui::Color32 = egui::Color32::from_rgb(235, 110, 90);
-const ORANGE: egui::Color32 = egui::Color32::from_rgb(240, 170, 80);
-const BLUE: egui::Color32 = egui::Color32::from_rgb(120, 170, 240);
-const PURPLE: egui::Color32 = egui::Color32::from_rgb(190, 140, 240);
-const DIM: egui::Color32 = egui::Color32::from_rgb(150, 150, 150);
+use crate::theme::{self, BLUE, DIM, GOLD, GREEN, ORANGE, PURPLE, RED};
 
 const OVERVIEW_LABEL: &str = "\u{2302} Overview — all games";
 
-#[derive(serde::Serialize, serde::Deserialize, Default, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[serde(default)]
 struct Settings {
     api_key: String,
     steam_input: String,
     steam_id: String,
+    auto_refresh: bool,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            api_key: String::new(),
+            steam_input: String::new(),
+            steam_id: String::new(),
+            auto_refresh: true,
+        }
+    }
+}
+
+/// How stale a scan may get before auto-refresh re-fetches it.
+const AUTO_REFRESH_AFTER_SECS: i64 = 300;
+
+/// A completed scan plus when it happened — this is what gets cached to disk.
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
+struct ScanEntry {
+    data: GameData,
+    fetched_at: i64,
 }
 
 enum Loaded {
     Loading,
-    Ready(GameData),
+    Ready(ScanEntry),
     Failed(String),
+}
+
+fn now_unix() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+/// Steam's storefront header art (460x215) — loaded via the http image loader.
+fn header_art_url(appid: u32) -> String {
+    format!("https://cdn.cloudflare.steamstatic.com/steam/apps/{appid}/header.jpg")
+}
+
+/// "3m ago" / "2h ago" / "5d ago"
+fn ago(unix: i64) -> String {
+    let secs = (now_unix() - unix).max(0);
+    if secs < 60 {
+        "just now".to_string()
+    } else if secs < 3600 {
+        format!("{}m ago", secs / 60)
+    } else if secs < 86_400 {
+        format!("{}h ago", secs / 3600)
+    } else {
+        format!("{}d ago", secs / 86_400)
+    }
 }
 
 #[derive(PartialEq, Clone, Copy)]
@@ -35,6 +77,12 @@ enum StatusFilter {
     All,
     Locked,
     Unlocked,
+}
+
+#[derive(PartialEq, Clone, Copy)]
+enum GameView {
+    Achievements,
+    Planner,
 }
 
 #[derive(PartialEq, Clone, Copy)]
@@ -72,21 +120,27 @@ pub struct App {
     selected_ach: HashMap<u32, String>,
     /// Ticked sub-checklist items, keyed by "appid/api_name". Persisted.
     checklist_done: HashMap<String, BTreeSet<usize>>,
+    /// Free-text personal notes, keyed by "appid/api_name". Persisted.
+    notes: HashMap<String, String>,
 
     search: String,
     status_filter: StatusFilter,
     missable_only: bool,
     sort_by: SortBy,
+    game_view: GameView,
+
+    /// Games with a background re-scan in flight (old data stays on screen).
+    refreshing: std::collections::HashSet<u32>,
+    /// Games whose next completed scan should announce itself with a toast.
+    announce_scan: std::collections::HashSet<u32>,
+    /// (message, expiry) — transient in-app notifications.
+    toasts: Vec<(String, std::time::Instant)>,
 }
 
 impl App {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         egui_extras::install_image_loaders(&cc.egui_ctx);
-
-        let mut visuals = egui::Visuals::dark();
-        visuals.selection.bg_fill = egui::Color32::from_rgb(94, 74, 34);
-        visuals.hyperlink_color = GOLD;
-        cc.egui_ctx.set_visuals(visuals);
+        theme::apply(&cc.egui_ctx);
 
         let settings: Settings = cc
             .storage
@@ -96,6 +150,19 @@ impl App {
             .storage
             .and_then(|s| eframe::get_value(s, "checklists"))
             .unwrap_or_default();
+        let notes: HashMap<String, String> = cc
+            .storage
+            .and_then(|s| eframe::get_value(s, "notes"))
+            .unwrap_or_default();
+        // Last scan per game — render instantly, refresh in the background.
+        let cache: HashMap<u32, ScanEntry> = cc
+            .storage
+            .and_then(|s| eframe::get_value(s, "scan_cache"))
+            .unwrap_or_default();
+        let data = cache
+            .into_iter()
+            .map(|(appid, entry)| (appid, Loaded::Ready(entry)))
+            .collect();
         let settings_open = settings.api_key.is_empty() || settings.steam_id.is_empty();
 
         // Prefill the account field from the local Steam client install.
@@ -116,15 +183,98 @@ impl App {
             detected,
             tx,
             rx,
-            data: HashMap::new(),
+            data,
             selected_game: None,
             selected_ach: HashMap::new(),
             checklist_done,
+            notes,
             search: String::new(),
             status_filter: StatusFilter::All,
             missable_only: false,
             sort_by: SortBy::MostCommon,
+            game_view: GameView::Achievements,
+            refreshing: std::collections::HashSet::new(),
+            announce_scan: std::collections::HashSet::new(),
+            toasts: Vec::new(),
         }
+    }
+
+    fn push_toast(&mut self, msg: impl Into<String>) {
+        self.toasts.push((
+            msg.into(),
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+        ));
+    }
+
+    fn notify_unlock(&mut self, game: &str, name: &str, pct: Option<f32>) {
+        let rarity = pct
+            .map(|p| format!(" — {p:.1}% of players have this"))
+            .unwrap_or_default();
+        self.push_toast(format!("\u{1F3C6} {name} unlocked!{rarity}"));
+        let _ = notify_rust::Notification::new()
+            .summary(&format!("Achievement unlocked — {game}"))
+            .body(&format!("{name}{rarity}"))
+            .show();
+    }
+
+    /// Background re-scan of stale games in view. Cached data stays visible.
+    fn auto_refresh(&mut self, ctx: &egui::Context) {
+        if !self.settings.auto_refresh || !self.connected() {
+            return;
+        }
+        let now = now_unix();
+        let stale: Vec<u32> = self
+            .data
+            .iter()
+            .filter_map(|(appid, loaded)| match loaded {
+                Loaded::Ready(entry)
+                    if now - entry.fetched_at > AUTO_REFRESH_AFTER_SECS
+                        && !self.refreshing.contains(appid) =>
+                {
+                    Some(*appid)
+                }
+                _ => None,
+            })
+            .filter(|appid| match self.selected_game {
+                Some(i) => GAMES[i].appid == *appid,
+                None => true, // dashboard keeps everything fresh
+            })
+            .collect();
+        for appid in stale {
+            self.refreshing.insert(appid);
+            steam::spawn_fetch_game(
+                self.tx.clone(),
+                ctx.clone(),
+                self.settings.api_key.clone(),
+                self.settings.steam_id.clone(),
+                appid,
+            );
+        }
+        // Keep the staleness check ticking even when idle.
+        ctx.request_repaint_after(std::time::Duration::from_secs(30));
+    }
+
+    fn draw_toasts(&mut self, ctx: &egui::Context) {
+        let now = std::time::Instant::now();
+        self.toasts.retain(|(_, expiry)| *expiry > now);
+        if self.toasts.is_empty() {
+            return;
+        }
+        egui::Area::new(egui::Id::new("toast_area"))
+            .anchor(egui::Align2::RIGHT_BOTTOM, egui::vec2(-16.0, -16.0))
+            .show(ctx, |ui| {
+                for (msg, _) in &self.toasts {
+                    egui::Frame::new()
+                        .fill(theme::TOAST_BG)
+                        .stroke(egui::Stroke::new(1.0, GOLD.gamma_multiply(0.7)))
+                        .corner_radius(8.0)
+                        .inner_margin(10.0)
+                        .show(ui, |ui| {
+                            ui.label(msg);
+                        });
+                }
+            });
+        ctx.request_repaint_after(std::time::Duration::from_millis(250));
     }
 
     fn connected(&self) -> bool {
@@ -149,11 +299,63 @@ impl App {
                     }
                 }
                 Msg::Game { appid, result } => {
-                    let loaded = match result {
-                        Ok(gd) => Loaded::Ready(gd),
-                        Err(e) => Loaded::Failed(e),
-                    };
-                    self.data.insert(appid, loaded);
+                    let was_refreshing = self.refreshing.remove(&appid);
+                    let game_title: &'static str = GAMES
+                        .iter()
+                        .find(|g| g.appid == appid)
+                        .map(|g| g.title)
+                        .unwrap_or("Unknown game");
+                    match result {
+                        Ok(gd) => {
+                            // Achievements that flipped to unlocked since the last scan.
+                            let newly: Vec<(String, Option<f32>)> = match self.data.get(&appid) {
+                                Some(Loaded::Ready(old))
+                                    if old.data.player_error.is_none()
+                                        && gd.player_error.is_none() =>
+                                {
+                                    let before: std::collections::HashSet<&str> = old
+                                        .data
+                                        .achievements
+                                        .iter()
+                                        .filter(|a| a.unlocked == Some(true))
+                                        .map(|a| a.api_name.as_str())
+                                        .collect();
+                                    gd.achievements
+                                        .iter()
+                                        .filter(|a| {
+                                            a.unlocked == Some(true)
+                                                && !before.contains(a.api_name.as_str())
+                                        })
+                                        .map(|a| (a.name.clone(), a.percent))
+                                        .collect()
+                                }
+                                _ => Vec::new(),
+                            };
+                            for (name, pct) in newly {
+                                self.notify_unlock(game_title, &name, pct);
+                            }
+                            if self.announce_scan.remove(&appid) {
+                                self.push_toast(format!("{game_title}: scan complete"));
+                            }
+                            self.data.insert(
+                                appid,
+                                Loaded::Ready(ScanEntry {
+                                    data: gd,
+                                    fetched_at: now_unix(),
+                                }),
+                            );
+                        }
+                        Err(e) => {
+                            // A failed background refresh keeps the cached scan on screen.
+                            if was_refreshing
+                                && matches!(self.data.get(&appid), Some(Loaded::Ready(_)))
+                            {
+                                self.push_toast(format!("{game_title}: refresh failed — {e}"));
+                            } else {
+                                self.data.insert(appid, Loaded::Failed(e));
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -223,8 +425,12 @@ impl App {
         match self.current_appid() {
             Some(appid) => {
                 self.data.remove(&appid);
+                self.announce_scan.insert(appid);
             }
-            None => self.data.clear(),
+            None => {
+                self.data.clear();
+                self.push_toast("Re-scanning all games…");
+            }
         }
         self.ensure_loaded(ctx);
     }
@@ -236,11 +442,7 @@ impl App {
         egui::Panel::top("top_bar").show(ui, |ui| {
             ui.add_space(6.0);
             ui.horizontal(|ui| {
-                ui.label(
-                    egui::RichText::new("\u{2694} FromSoft Trophy Helper")
-                        .heading()
-                        .color(GOLD),
-                );
+                ui.label(theme::display("\u{2694} FromSoft Trophy Helper", 20.0));
                 ui.separator();
 
                 let prev = self.selected_game;
@@ -359,6 +561,18 @@ impl App {
                     .small()
                     .color(DIM),
                 );
+                ui.add_space(8.0);
+                ui.checkbox(
+                    &mut self.settings.auto_refresh,
+                    "Auto-rescan every 5 minutes while the app is open",
+                );
+                ui.label(
+                    egui::RichText::new(
+                        "You'll get a notification when a new achievement pops mid-session.",
+                    )
+                    .small()
+                    .color(DIM),
+                );
                 ui.add_space(10.0);
 
                 ui.horizontal(|ui| {
@@ -466,7 +680,8 @@ impl App {
                         ui.add_space(20.0);
                         ui.label(egui::RichText::new(e).color(RED));
                     }
-                    Some(Loaded::Ready(gd)) => {
+                    Some(Loaded::Ready(entry)) => {
+                        let gd = &entry.data;
                         // Progress header
                         let total = gd.achievements.len();
                         let unlocked = gd
@@ -476,13 +691,23 @@ impl App {
                             .count();
                         if gd.player_error.is_none() && total > 0 {
                             ui.add_space(4.0);
-                            ui.label(
-                                egui::RichText::new(format!(
-                                    "{unlocked} / {total} unlocked ({:.0}%)",
-                                    unlocked as f32 / total as f32 * 100.0
-                                ))
-                                .strong(),
-                            );
+                            ui.horizontal(|ui| {
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "{unlocked} / {total} unlocked ({:.0}%)",
+                                        unlocked as f32 / total as f32 * 100.0
+                                    ))
+                                    .strong(),
+                                );
+                                ui.label(
+                                    egui::RichText::new(format!(
+                                        "· scanned {}",
+                                        ago(entry.fetched_at)
+                                    ))
+                                    .small()
+                                    .color(DIM),
+                                );
+                            });
                             ui.add(
                                 egui::ProgressBar::new(unlocked as f32 / total as f32)
                                     .desired_height(8.0),
@@ -540,21 +765,163 @@ impl App {
         let appid = game.appid;
         let selected: Option<AchRow> = match (self.data.get(&appid), self.selected_ach.get(&appid))
         {
-            (Some(Loaded::Ready(gd)), Some(sel)) => {
-                gd.achievements.iter().find(|a| &a.api_name == sel).cloned()
+            (Some(Loaded::Ready(entry)), Some(sel)) => entry
+                .data
+                .achievements
+                .iter()
+                .find(|a| &a.api_name == sel)
+                .cloned(),
+            _ => None,
+        };
+
+        // Planner needs its own copy of the rows to sidestep split borrows.
+        let planner_rows: Option<Vec<AchRow>> = match (self.game_view, self.data.get(&appid)) {
+            (GameView::Planner, Some(Loaded::Ready(entry))) => {
+                Some(entry.data.achievements.clone())
             }
             _ => None,
         };
 
+        let mut planner_clicked: Option<String> = None;
         egui::CentralPanel::default().show(ui, |ui| {
+            ui.add_space(4.0);
+            ui.horizontal(|ui| {
+                ui.selectable_value(
+                    &mut self.game_view,
+                    GameView::Achievements,
+                    "\u{1F3C6} Achievements",
+                );
+                ui.selectable_value(&mut self.game_view, GameView::Planner, "\u{1F5FA} Planner");
+            });
+            ui.separator();
             egui::ScrollArea::vertical()
                 .auto_shrink(false)
-                .show(ui, |ui| match selected {
-                    Some(row) => ach_details(ui, game, &row, &mut self.checklist_done),
-                    None => game_overview(ui, game, self.connected(), &mut self.settings_open),
+                .show(ui, |ui| match self.game_view {
+                    GameView::Planner => match &planner_rows {
+                        Some(rows) => {
+                            planner_clicked = planner_view(ui, game, rows, &self.checklist_done);
+                        }
+                        None => {
+                            ui.add_space(16.0);
+                            ui.label(
+                                egui::RichText::new(
+                                    "Scan the game first — the planner organizes your \
+                                     remaining achievements by playthrough.",
+                                )
+                                .color(DIM),
+                            );
+                        }
+                    },
+                    GameView::Achievements => match selected {
+                        Some(row) => {
+                            ach_details(ui, game, &row, &mut self.checklist_done, &mut self.notes)
+                        }
+                        None => game_overview(ui, game, self.connected(), &mut self.settings_open),
+                    },
                 });
         });
+
+        if let Some(api_name) = planner_clicked {
+            self.selected_ach.insert(appid, api_name);
+            self.game_view = GameView::Achievements;
+        }
     }
+}
+
+/// Phase-grouped roadmap for one game. Returns a clicked achievement.
+fn planner_view(
+    ui: &mut egui::Ui,
+    game: &games::Game,
+    rows: &[AchRow],
+    checklist_done: &HashMap<String, BTreeSet<usize>>,
+) -> Option<String> {
+    let mut clicked = None;
+
+    ui.add_space(8.0);
+    ui.label(theme::display(format!("{} — Roadmap", game.title), 22.0));
+    ui.label(
+        egui::RichText::new(
+            "Grouped by the earliest playthrough each achievement realistically lands in. \
+             Click one to open its guide.",
+        )
+        .small()
+        .color(DIM),
+    );
+
+    let phases: [(&str, &str); 5] = [
+        ("NG", "\u{2694} This playthrough"),
+        ("NG+", "\u{27F3} New Game+"),
+        ("NG++", "\u{27F3}\u{27F3} NG++ and beyond"),
+        ("Multiple runs", "\u{1F4BE} Multiple runs / save backups"),
+        ("", "\u{2726} Anytime"),
+    ];
+
+    for (phase_key, phase_label) in phases {
+        let group: Vec<&AchRow> = rows
+            .iter()
+            .filter(|r| {
+                guides::find(game.appid, &r.name)
+                    .map(|g| g.phase)
+                    .unwrap_or("")
+                    == phase_key
+            })
+            .collect();
+        if group.is_empty() {
+            continue;
+        }
+        let done = group.iter().filter(|r| r.unlocked == Some(true)).count();
+
+        ui.add_space(12.0);
+        ui.horizontal(|ui| {
+            ui.label(theme::display(phase_label, 17.0));
+            ui.label(
+                egui::RichText::new(format!("{done}/{}", group.len()))
+                    .small()
+                    .color(DIM),
+            );
+        });
+        ui.separator();
+
+        for row in group {
+            let unlocked = row.unlocked == Some(true);
+            let guide = guides::find(game.appid, &row.name);
+            ui.horizontal(|ui| {
+                ui.label(if unlocked {
+                    egui::RichText::new("\u{2714}").color(GREEN)
+                } else {
+                    egui::RichText::new("\u{1F512}").color(DIM)
+                });
+                let name = if unlocked {
+                    egui::RichText::new(&row.name).strikethrough().color(DIM)
+                } else {
+                    egui::RichText::new(&row.name)
+                };
+                if ui.link(name).clicked() {
+                    clicked = Some(row.api_name.clone());
+                }
+                if guide.is_some_and(|g| g.missable) && !unlocked {
+                    ui.label(egui::RichText::new("\u{26A0}").color(ORANGE))
+                        .on_hover_text("Missable — open the guide before playing on");
+                }
+                if let Some(g) = guide
+                    && !g.checklist.is_empty()
+                    && !unlocked
+                {
+                    let key = format!("{}/{}", game.appid, row.api_name);
+                    let n = checklist_done.get(&key).map(|s| s.len()).unwrap_or(0);
+                    ui.label(
+                        egui::RichText::new(format!("\u{2611} {n}/{}", g.checklist.len()))
+                            .small()
+                            .color(BLUE),
+                    );
+                }
+                if let Some(p) = row.percent {
+                    ui.label(egui::RichText::new(format!("{p:.1}%")).small().color(DIM));
+                }
+            });
+        }
+    }
+    clicked
 }
 
 impl App {
@@ -568,11 +935,7 @@ impl App {
                 .auto_shrink(false)
                 .show(ui, |ui| {
                     ui.add_space(10.0);
-                    ui.label(
-                        egui::RichText::new("Your 100% hunt at a glance")
-                            .heading()
-                            .color(GOLD),
-                    );
+                    ui.label(theme::display("Your 100% Hunt at a Glance", 24.0));
                     if !connected {
                         ui.add_space(4.0);
                         ui.horizontal(|ui| {
@@ -596,15 +959,17 @@ impl App {
                     // in catalog order.
                     let frac = |i: &usize| -> f32 {
                         match self.data.get(&GAMES[*i].appid) {
-                            Some(Loaded::Ready(gd))
-                                if gd.player_error.is_none() && !gd.achievements.is_empty() =>
+                            Some(Loaded::Ready(entry))
+                                if entry.data.player_error.is_none()
+                                    && !entry.data.achievements.is_empty() =>
                             {
-                                let unlocked = gd
+                                let unlocked = entry
+                                    .data
                                     .achievements
                                     .iter()
                                     .filter(|a| a.unlocked == Some(true))
                                     .count();
-                                unlocked as f32 / gd.achievements.len() as f32
+                                unlocked as f32 / entry.data.achievements.len() as f32
                             }
                             Some(Loaded::Ready(_)) => -1.0,
                             _ => -2.0,
@@ -638,80 +1003,104 @@ impl App {
 
 /// One dashboard card. Returns true when clicked.
 fn game_card(ui: &mut egui::Ui, game: &games::Game, state: Option<&Loaded>) -> bool {
+    let bg_slot = ui.painter().add(egui::Shape::Noop);
     let resp = egui::Frame::group(ui.style())
         .inner_margin(12.0)
         .corner_radius(8.0)
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
-            ui.label(egui::RichText::new(game.title).strong().size(16.0));
-            ui.add_space(4.0);
-            match state {
-                Some(Loaded::Ready(gd)) => {
-                    let total = gd.achievements.len();
-                    let unlocked = gd
-                        .achievements
-                        .iter()
-                        .filter(|a| a.unlocked == Some(true))
-                        .count();
-                    if gd.player_error.is_none() && total > 0 {
-                        let f = unlocked as f32 / total as f32;
-                        ui.horizontal(|ui| {
-                            ui.add(
-                                egui::ProgressBar::new(f)
-                                    .desired_width(260.0)
-                                    .desired_height(12.0),
-                            );
-                            let pct = egui::RichText::new(format!(
-                                "{unlocked} / {total}  ({:.0}%)",
-                                f * 100.0
-                            ))
-                            .strong();
-                            ui.label(if f >= 1.0 { pct.color(GOLD) } else { pct });
-                            if f >= 1.0 {
-                                ui.label(egui::RichText::new("\u{1F3C6} 100%!").color(GOLD));
-                            }
-                        });
-                        if let Some(t) = gd.achievements.iter().filter_map(|a| a.unlock_time).max()
-                        {
-                            ui.label(
-                                egui::RichText::new(format!("Last unlock: {}", format_unix(t)))
-                                    .small()
-                                    .color(DIM),
-                            );
-                        }
-                    } else {
-                        ui.label(
-                            egui::RichText::new(format!(
-                                "\u{26A0} Global stats only — {}",
-                                gd.player_error.as_deref().unwrap_or("no player data")
-                            ))
-                            .small()
-                            .color(ORANGE),
-                        );
-                    }
-                }
-                Some(Loaded::Loading) => {
-                    ui.horizontal(|ui| {
-                        ui.spinner();
-                        ui.label(egui::RichText::new("Scanning…").color(DIM));
-                    });
-                }
-                Some(Loaded::Failed(e)) => {
-                    ui.label(egui::RichText::new(e.as_str()).small().color(RED));
-                }
-                None => {
-                    ui.label(
-                        egui::RichText::new("Not scanned — connect Steam in Settings")
-                            .small()
-                            .color(DIM),
-                    );
-                }
-            }
+            ui.horizontal(|ui| {
+                ui.add(
+                    egui::Image::new(header_art_url(game.appid))
+                        .fit_to_exact_size(egui::vec2(184.0, 86.0))
+                        .corner_radius(6.0),
+                );
+                ui.vertical(|ui| {
+                    ui.label(theme::display(game.title, 17.0));
+                    ui.add_space(4.0);
+                    game_card_status(ui, state);
+                });
+            });
         })
         .response;
 
     let resp = resp.interact(egui::Sense::click());
+    if resp.hovered() {
+        ui.painter().set(
+            bg_slot,
+            egui::Shape::rect_filled(resp.rect, 8.0, theme::ROW_HOVER),
+        );
+        ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::PointingHand);
+    }
     resp.clicked()
+}
+
+fn game_card_status(ui: &mut egui::Ui, state: Option<&Loaded>) {
+    match state {
+        Some(Loaded::Ready(entry)) => {
+            let gd = &entry.data;
+            let total = gd.achievements.len();
+            let unlocked = gd
+                .achievements
+                .iter()
+                .filter(|a| a.unlocked == Some(true))
+                .count();
+            if gd.player_error.is_none() && total > 0 {
+                let f = unlocked as f32 / total as f32;
+                ui.horizontal(|ui| {
+                    ui.add(
+                        egui::ProgressBar::new(f)
+                            .desired_width(260.0)
+                            .desired_height(12.0),
+                    );
+                    let pct =
+                        egui::RichText::new(format!("{unlocked} / {total}  ({:.0}%)", f * 100.0))
+                            .strong();
+                    ui.label(if f >= 1.0 { pct.color(GOLD) } else { pct });
+                    if f >= 1.0 {
+                        ui.label(egui::RichText::new("\u{1F3C6} 100%!").color(GOLD));
+                    }
+                });
+                let last = gd
+                    .achievements
+                    .iter()
+                    .filter_map(|a| a.unlock_time)
+                    .max()
+                    .map(|t| format!("Last unlock: {} · ", format_unix(t)))
+                    .unwrap_or_default();
+                ui.label(
+                    egui::RichText::new(format!("{last}scanned {}", ago(entry.fetched_at)))
+                        .small()
+                        .color(DIM),
+                );
+            } else {
+                ui.label(
+                    egui::RichText::new(format!(
+                        "\u{26A0} Global stats only — {}",
+                        gd.player_error.as_deref().unwrap_or("no player data")
+                    ))
+                    .small()
+                    .color(ORANGE),
+                );
+            }
+        }
+        Some(Loaded::Loading) => {
+            ui.horizontal(|ui| {
+                ui.spinner();
+                ui.label(egui::RichText::new("Scanning…").color(DIM));
+            });
+        }
+        Some(Loaded::Failed(e)) => {
+            ui.label(egui::RichText::new(e.as_str()).small().color(RED));
+        }
+        None => {
+            ui.label(
+                egui::RichText::new("Not scanned — connect Steam in Settings")
+                    .small()
+                    .color(DIM),
+            );
+        }
+    }
 }
 
 impl eframe::App for App {
@@ -719,15 +1108,27 @@ impl eframe::App for App {
         let ctx = ui.ctx().clone();
         self.poll_messages();
         self.ensure_loaded(&ctx);
+        self.auto_refresh(&ctx);
         self.top_bar(ui);
         self.settings_window(&ctx);
         self.left_panel(ui);
         self.central_panel(ui);
+        self.draw_toasts(&ctx);
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, "settings", &self.settings);
         eframe::set_value(storage, "checklists", &self.checklist_done);
+        eframe::set_value(storage, "notes", &self.notes);
+        let cache: HashMap<u32, &ScanEntry> = self
+            .data
+            .iter()
+            .filter_map(|(appid, loaded)| match loaded {
+                Loaded::Ready(entry) => Some((*appid, entry)),
+                _ => None,
+            })
+            .collect();
+        eframe::set_value(storage, "scan_cache", &cache);
     }
 }
 
@@ -744,6 +1145,7 @@ fn ach_list_row(
     let guide = guides::find(appid, &row.name);
     let unlocked = row.unlocked == Some(true);
 
+    let bg_slot = ui.painter().add(egui::Shape::Noop);
     let fill = if selected {
         ui.visuals().selection.bg_fill.gamma_multiply(0.5)
     } else {
@@ -794,7 +1196,12 @@ fn ach_list_row(
                                     .desired_height(9.0),
                             );
                             ui.label(egui::RichText::new(format!("{p:.1}%")).small().color(DIM));
-                            ui.label(egui::RichText::new(rarity).small().color(color));
+                            ui.label(
+                                egui::RichText::new(format!(" {rarity} "))
+                                    .small()
+                                    .color(color)
+                                    .background_color(color.gamma_multiply(0.15)),
+                            );
                         }
                         if let Some(g) = guide
                             && !g.checklist.is_empty()
@@ -820,6 +1227,13 @@ fn ach_list_row(
         .response;
 
     let resp = resp.interact(egui::Sense::click());
+    if resp.hovered() && !selected {
+        ui.painter().set(
+            bg_slot,
+            egui::Shape::rect_filled(resp.rect, 6.0, theme::ROW_HOVER),
+        );
+        ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::PointingHand);
+    }
     resp.clicked()
 }
 
@@ -828,6 +1242,7 @@ fn ach_details(
     game: &games::Game,
     row: &AchRow,
     checklist_done: &mut HashMap<String, BTreeSet<usize>>,
+    notes: &mut HashMap<String, String>,
 ) {
     let guide = guides::find(game.appid, &row.name);
 
@@ -847,7 +1262,7 @@ fn ach_details(
         }
         ui.vertical(|ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(&row.name).heading().color(GOLD));
+                ui.label(theme::display(&row.name, 22.0));
                 if guide.is_some_and(|g| g.missable) {
                     ui.label(
                         egui::RichText::new("\u{26A0} MISSABLE")
@@ -895,7 +1310,11 @@ fn ach_details(
         let (rarity, color) = rarity_label(p);
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new(format!("{p:.1}% of players have this")).strong());
-            ui.label(egui::RichText::new(rarity).color(color));
+            ui.label(
+                egui::RichText::new(format!(" {rarity} "))
+                    .color(color)
+                    .background_color(color.gamma_multiply(0.15)),
+            );
         });
         ui.add(egui::ProgressBar::new(p / 100.0).desired_height(10.0));
     }
@@ -977,6 +1396,25 @@ fn ach_details(
         }
     }
 
+    // Personal notes, saved locally.
+    ui.add_space(8.0);
+    let note_key = format!("{}/{}", game.appid, row.api_name);
+    let has_note = notes.get(&note_key).is_some_and(|n| !n.trim().is_empty());
+    egui::CollapsingHeader::new(egui::RichText::new("\u{1F4DD} My notes").strong())
+        .default_open(has_note)
+        .show(ui, |ui| {
+            let note = notes.entry(note_key.clone()).or_default();
+            ui.add(
+                egui::TextEdit::multiline(note)
+                    .desired_width(f32::INFINITY)
+                    .desired_rows(3)
+                    .hint_text("Build reminders, co-op partners, where you left off…"),
+            );
+        });
+    if notes.get(&note_key).is_some_and(|n| n.trim().is_empty()) {
+        notes.remove(&note_key);
+    }
+
     // Every achievement gets search links, curated or not.
     ui.add_space(8.0);
     ui.label(egui::RichText::new("\u{1F50E} Find more help").strong());
@@ -1007,7 +1445,13 @@ fn ach_details(
 
 fn game_overview(ui: &mut egui::Ui, game: &games::Game, connected: bool, settings_open: &mut bool) {
     ui.add_space(12.0);
-    ui.label(egui::RichText::new(game.title).heading().color(GOLD));
+    ui.add(
+        egui::Image::new(header_art_url(game.appid))
+            .fit_to_exact_size(egui::vec2(460.0, 215.0))
+            .corner_radius(8.0),
+    );
+    ui.add_space(8.0);
+    ui.label(theme::display(game.title, 24.0));
     ui.add_space(4.0);
     if connected {
         ui.label("Select an achievement on the left to see rules, locations, and guides.");
@@ -1220,5 +1664,47 @@ mod tests {
             assert_eq!(g.missable, missable, "missable flag for {name}");
         }
         assert!(crate::guides::find(1245620, "Roundtable Hold").is_none());
+    }
+
+    #[test]
+    fn scan_entry_serde_round_trip() {
+        let entry = ScanEntry {
+            data: crate::steam::GameData {
+                achievements: vec![crate::steam::AchRow {
+                    api_name: "ACH_1".into(),
+                    name: "Elden Lord".into(),
+                    description: "Achieved an ending".into(),
+                    hidden: true,
+                    icon: "https://example.com/i.jpg".into(),
+                    icon_gray: "https://example.com/g.jpg".into(),
+                    percent: Some(31.4),
+                    unlocked: Some(true),
+                    unlock_time: Some(1_700_000_000),
+                }],
+                player_error: None,
+            },
+            fetched_at: 1_752_000_000,
+        };
+        let json = serde_json::to_string(&entry).unwrap();
+        let back: ScanEntry = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.fetched_at, entry.fetched_at);
+        assert_eq!(back.data.achievements.len(), 1);
+        assert_eq!(back.data.achievements[0].name, "Elden Lord");
+        assert_eq!(back.data.achievements[0].percent, Some(31.4));
+    }
+
+    #[test]
+    fn planner_phases_assigned() {
+        for (appid, name, phase) in [
+            (1245620, "Age of the Stars", "Multiple runs"),
+            (1245620, "Legendary Armaments", "NG"),
+            (374320, "Master of Rings", "NG++"),
+            (814380, "Shura", "Multiple runs"),
+            (1888160, "Alea Iacta Est", "NG++"),
+            (570940, "Knight's Honor", "NG++"),
+        ] {
+            let g = crate::guides::find(appid, name).unwrap();
+            assert_eq!(g.phase, phase, "phase for {name}");
+        }
     }
 }
