@@ -27,9 +27,14 @@ pub struct Guide {
 }
 
 /// Look up curated guide data for an achievement. The original DS2 shares
-/// guides with Scholar of the First Sin.
+/// guides with Scholar of the First Sin, and Prepare to Die Edition shares
+/// guides with Dark Souls: Remastered (identical achievement lists).
 pub fn find(appid: u32, display_name: &str) -> Option<&'static Guide> {
-    let appid = if appid == 236430 { 335300 } else { appid };
+    let appid = match appid {
+        236430 => 335300,
+        211420 => 570940,
+        other => other,
+    };
     let name = display_name.to_lowercase();
     GUIDES
         .iter()

@@ -24,6 +24,7 @@ Steam Web API and pairs every achievement with the help you need to finish it:
 | Sekiro: Shadows Die Twice | 814380 |
 | ARMORED CORE VI: FIRES OF RUBICON | 1888160 |
 | DARK SOULS: REMASTERED | 570940 |
+| DARK SOULS: Prepare to Die Edition | 211420 |
 | DARK SOULS II: Scholar of the First Sin | 335300 |
 | DARK SOULS II (2014) | 236430 |
 

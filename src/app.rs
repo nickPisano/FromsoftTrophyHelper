@@ -923,6 +923,7 @@ mod tests {
             (570940, "Knight's Honor", true),
             (335300, "Master of Hexes", false),
             (236430, "Master of Hexes", false), // original DS2 shares guides
+            (211420, "Knight's Honor", true),   // PTDE shares DS1R guides
         ] {
             let g = crate::guides::find(appid, name)
                 .unwrap_or_else(|| panic!("no guide matched {appid} / {name}"));

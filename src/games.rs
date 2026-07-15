@@ -87,6 +87,20 @@ pub const GAMES: &[Game] = &[
         ],
     },
     Game {
+        appid: 211420,
+        title: "DARK SOULS: Prepare to Die Edition",
+        notes: &[
+            "Same achievement list as the Remastered version, so the same rules apply: Knight's Honor needs boss souls across NG+/NG++ (or trades), cut boss tails on first meeting, and reach Kaathe (Four Kings before placing the Lordvessel) for the Darkwraith covenant.",
+            "PTDE was delisted from the Steam store in 2018 but still runs for existing owners. Online (GFWL-era) services are gone — every achievement is earnable fully offline.",
+            "Buy out spell vendors (Logan, Laurentius, Reah) before their questlines can kill or hollow them.",
+        ],
+        resources: &[
+            Resource { label: "Fextralife Dark Souls Wiki", url: "https://darksouls.wiki.fextralife.com/Dark+Souls+Wiki" },
+            Resource { label: "Dark Souls Wikidot (clean checklists)", url: "http://darksouls.wikidot.com/" },
+            Resource { label: "Steam Community guides for Prepare to Die Edition", url: "https://steamcommunity.com/app/211420/guides/" },
+        ],
+    },
+    Game {
         appid: 335300,
         title: "DARK SOULS II: Scholar of the First Sin",
         notes: &[
