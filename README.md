@@ -16,8 +16,10 @@ Steam Web API and pairs every achievement with the help you need to finish it:
   recent unlocks.
 - **Overview dashboard** — every game's completion at a glance, sorted by how close you are
   to 100%.
-- **Sub-checklists** — tick off the individual items inside collect-them-all achievements
-  (legendary armaments, tail cuts, scrolls, quest steps); progress is saved locally.
+- **Sub-checklists** — tick off every individual item inside collect-them-all achievements:
+  all 47 Knight's Honor weapons, every DS1/DS3 spell (with vendor/tome grouping and DLC
+  exclusions), legendary armaments, quest steps. Grouped headers, progress bar, quick
+  filter, and check-all/clear-all; progress is saved locally.
 - **Zero-friction setup** — your SteamID is auto-detected from the local Steam client;
   you only paste an API key.
 - **Instant startup** — the last scan is cached locally, so the app opens with your data

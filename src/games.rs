@@ -112,7 +112,7 @@ pub const GAMES: &[Game] = &[
         title: "DARK SOULS: REMASTERED",
         notes: &[
             "Knight's Honor (all rare weapons) is the long pole: several boss souls each forge more than one weapon, so you need souls from NG+ (and one from NG++) unless you trade with another player. Start a checklist on day one.",
-            "Cut boss tails on your FIRST encounter — Priscilla's Dagger, the Moonlight Greatsword (Seath), the Gargoyle Tail Axe, the Guardian Tail, and Kalameet's Obsidian Greatsword only come from tail cuts.",
+            "Cut tails on your FIRST encounter — five Knight's Honor weapons only come from tail cuts: the Drake Sword (Hellkite), Dragon King Greataxe (Gaping Dragon), Priscilla's Dagger, Moonlight Greatsword (Seath), and Dragon Greatsword (Ash Lake's Stone Dragon). DLC weapons are NOT required.",
             "To join the Darkwraith covenant you must reach Kaathe in the Abyss: defeat the Four Kings BEFORE placing the Lordvessel with Frampt, or Kaathe won't appear that cycle.",
             "Several NPC vendors (Logan, Laurentius, Reah) can die or go hollow — buy out their spell stock as soon as you can afford it.",
         ],

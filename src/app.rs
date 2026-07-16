@@ -118,8 +118,11 @@ pub struct App {
     /// `None` = the all-games overview dashboard.
     selected_game: Option<usize>,
     selected_ach: HashMap<u32, String>,
-    /// Ticked sub-checklist items, keyed by "appid/api_name". Persisted.
-    checklist_done: HashMap<String, BTreeSet<usize>>,
+    /// Ticked sub-checklist items, keyed by "appid/api_name" → set of item
+    /// texts (robust against list reordering/insertion). Persisted.
+    checklist_done: HashMap<String, BTreeSet<String>>,
+    /// Quick-filter text for long checklists (transient).
+    checklist_filter: String,
     /// Free-text personal notes, keyed by "appid/api_name". Persisted.
     notes: HashMap<String, String>,
 
@@ -146,9 +149,9 @@ impl App {
             .storage
             .and_then(|s| eframe::get_value(s, "settings"))
             .unwrap_or_default();
-        let checklist_done: HashMap<String, BTreeSet<usize>> = cc
+        let checklist_done: HashMap<String, BTreeSet<String>> = cc
             .storage
-            .and_then(|s| eframe::get_value(s, "checklists"))
+            .and_then(|s| eframe::get_value(s, "checklists_v2"))
             .unwrap_or_default();
         let notes: HashMap<String, String> = cc
             .storage
@@ -187,6 +190,7 @@ impl App {
             selected_game: None,
             selected_ach: HashMap::new(),
             checklist_done,
+            checklist_filter: String::new(),
             notes,
             search: String::new(),
             status_filter: StatusFilter::All,
@@ -813,9 +817,14 @@ impl App {
                         }
                     },
                     GameView::Achievements => match selected {
-                        Some(row) => {
-                            ach_details(ui, game, &row, &mut self.checklist_done, &mut self.notes)
-                        }
+                        Some(row) => ach_details(
+                            ui,
+                            game,
+                            &row,
+                            &mut self.checklist_done,
+                            &mut self.checklist_filter,
+                            &mut self.notes,
+                        ),
                         None => game_overview(ui, game, self.connected(), &mut self.settings_open),
                     },
                 });
@@ -833,7 +842,7 @@ fn planner_view(
     ui: &mut egui::Ui,
     game: &games::Game,
     rows: &[AchRow],
-    checklist_done: &HashMap<String, BTreeSet<usize>>,
+    checklist_done: &HashMap<String, BTreeSet<String>>,
 ) -> Option<String> {
     let mut clicked = None;
 
@@ -908,9 +917,9 @@ fn planner_view(
                     && !unlocked
                 {
                     let key = format!("{}/{}", game.appid, row.api_name);
-                    let n = checklist_done.get(&key).map(|s| s.len()).unwrap_or(0);
+                    let (n, total) = checklist_progress(checklist_done.get(&key), g.checklist);
                     ui.label(
-                        egui::RichText::new(format!("\u{2611} {n}/{}", g.checklist.len()))
+                        egui::RichText::new(format!("\u{2611} {n}/{total}"))
                             .small()
                             .color(BLUE),
                     );
@@ -1118,7 +1127,7 @@ impl eframe::App for App {
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         eframe::set_value(storage, "settings", &self.settings);
-        eframe::set_value(storage, "checklists", &self.checklist_done);
+        eframe::set_value(storage, "checklists_v2", &self.checklist_done);
         eframe::set_value(storage, "notes", &self.notes);
         let cache: HashMap<u32, &ScanEntry> = self
             .data
@@ -1140,7 +1149,7 @@ fn ach_list_row(
     appid: u32,
     row: &AchRow,
     selected: bool,
-    checklist_done: &HashMap<String, BTreeSet<usize>>,
+    checklist_done: &HashMap<String, BTreeSet<String>>,
 ) -> bool {
     let guide = guides::find(appid, &row.name);
     let unlocked = row.unlocked == Some(true);
@@ -1208,15 +1217,13 @@ fn ach_list_row(
                             && !unlocked
                         {
                             let key = format!("{}/{}", appid, row.api_name);
-                            let n = checklist_done.get(&key).map(|s| s.len()).unwrap_or(0);
+                            let (n, total) =
+                                checklist_progress(checklist_done.get(&key), g.checklist);
                             if n > 0 {
                                 ui.label(
-                                    egui::RichText::new(format!(
-                                        "\u{2611} {n}/{}",
-                                        g.checklist.len()
-                                    ))
-                                    .small()
-                                    .color(BLUE),
+                                    egui::RichText::new(format!("\u{2611} {n}/{total}"))
+                                        .small()
+                                        .color(BLUE),
                                 );
                             }
                         }
@@ -1237,11 +1244,28 @@ fn ach_list_row(
     resp.clicked()
 }
 
+/// (ticked, total) for a checklist, counting only non-header items.
+fn checklist_progress(done: Option<&BTreeSet<String>>, items: &[&str]) -> (usize, usize) {
+    let mut n = 0;
+    let mut total = 0;
+    for item in items {
+        if item.starts_with("## ") {
+            continue;
+        }
+        total += 1;
+        if done.is_some_and(|d| d.contains(*item)) {
+            n += 1;
+        }
+    }
+    (n, total)
+}
+
 fn ach_details(
     ui: &mut egui::Ui,
     game: &games::Game,
     row: &AchRow,
-    checklist_done: &mut HashMap<String, BTreeSet<usize>>,
+    checklist_done: &mut HashMap<String, BTreeSet<String>>,
+    checklist_filter: &mut String,
     notes: &mut HashMap<String, String>,
 ) {
     let guide = guides::find(game.appid, &row.name);
@@ -1355,13 +1379,9 @@ fn ach_details(
         if !g.checklist.is_empty() {
             ui.add_space(8.0);
             let key = format!("{}/{}", game.appid, row.api_name);
-            let done = checklist_done.entry(key).or_default();
             let unlocked = row.unlocked == Some(true);
-            let header = format!(
-                "\u{2611} Checklist — {}/{} done",
-                done.len(),
-                g.checklist.len()
-            );
+            let (n, total) = checklist_progress(checklist_done.get(&key), g.checklist);
+            let header = format!("\u{2611} Checklist — {n}/{total} collected");
             egui::CollapsingHeader::new(egui::RichText::new(header).strong())
                 .default_open(!unlocked)
                 .show(ui, |ui| {
@@ -1372,13 +1392,59 @@ fn ach_details(
                         .small()
                         .color(DIM),
                     );
-                    for (i, item) in g.checklist.iter().enumerate() {
-                        let mut checked = done.contains(&i);
-                        if ui.checkbox(&mut checked, *item).changed() {
+                    ui.add(
+                        egui::ProgressBar::new(if total > 0 {
+                            n as f32 / total as f32
+                        } else {
+                            0.0
+                        })
+                        .desired_height(8.0),
+                    );
+                    ui.horizontal(|ui| {
+                        if total > 12 {
+                            ui.label("\u{1F50D}");
+                            ui.add(
+                                egui::TextEdit::singleline(checklist_filter)
+                                    .desired_width(180.0)
+                                    .hint_text("Filter items…"),
+                            );
+                        }
+                        if ui.small_button("Check all").clicked() {
+                            let done = checklist_done.entry(key.clone()).or_default();
+                            for item in g.checklist {
+                                if !item.starts_with("## ") {
+                                    done.insert((*item).to_string());
+                                }
+                            }
+                        }
+                        if ui.small_button("Clear all").clicked() {
+                            checklist_done.remove(&key);
+                        }
+                    });
+                    let needle = checklist_filter.to_lowercase();
+                    let done = checklist_done.entry(key.clone()).or_default();
+                    for item in g.checklist {
+                        if let Some(heading) = item.strip_prefix("## ") {
+                            if needle.is_empty() {
+                                ui.add_space(6.0);
+                                ui.label(theme::display(heading, 14.0));
+                            }
+                            continue;
+                        }
+                        if !needle.is_empty() && !item.to_lowercase().contains(&needle) {
+                            continue;
+                        }
+                        let mut checked = done.contains(*item);
+                        let label = if checked {
+                            egui::RichText::new(*item).strikethrough().color(DIM)
+                        } else {
+                            egui::RichText::new(*item)
+                        };
+                        if ui.checkbox(&mut checked, label).changed() {
                             if checked {
-                                done.insert(i);
+                                done.insert((*item).to_string());
                             } else {
-                                done.remove(&i);
+                                done.remove(*item);
                             }
                         }
                     }
@@ -1691,6 +1757,61 @@ mod tests {
         assert_eq!(back.data.achievements.len(), 1);
         assert_eq!(back.data.achievements[0].name, "Elden Lord");
         assert_eq!(back.data.achievements[0].percent, Some(31.4));
+    }
+
+    #[test]
+    fn checklist_progress_excludes_headers() {
+        let items = ["## Group A", "sword", "shield", "## Group B", "spear"];
+        let mut done = BTreeSet::new();
+        done.insert("sword".to_string());
+        done.insert("## Group A".to_string()); // headers never count even if present
+        assert_eq!(checklist_progress(Some(&done), &items), (1, 3));
+        assert_eq!(checklist_progress(None, &items), (0, 3));
+    }
+
+    #[test]
+    fn no_duplicate_checklist_items() {
+        for g in crate::guides::all_guides() {
+            let mut seen = std::collections::HashSet::new();
+            for item in g.checklist {
+                assert!(
+                    seen.insert(*item),
+                    "duplicate checklist item {item:?} in guide matching {:?}",
+                    g.matches
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn collectathon_checklists_are_item_level() {
+        for (appid, name, floor) in [
+            (570940, "Knight's Honor", 40),
+            (570940, "Bond of a Pyromancer", 15),
+            (570940, "Wisdom of a Sage", 20),
+            (570940, "Prayer of a Maiden", 20),
+            (374320, "Master of Sorceries", 30),
+            (374320, "Master of Miracles", 30),
+            (374320, "Master of Pyromancies", 25),
+        ] {
+            let g = crate::guides::find(appid, name).unwrap();
+            let (_, total) = checklist_progress(None, g.checklist);
+            assert!(
+                total >= floor,
+                "{name}: expected at least {floor} checkable items, got {total}"
+            );
+        }
+    }
+
+    #[test]
+    fn checklist_state_serde_round_trip() {
+        let mut map: HashMap<String, BTreeSet<String>> = HashMap::new();
+        map.entry("570940/ACH_KH".into())
+            .or_default()
+            .insert("Drake Sword (Hellkite Drake's tail, Undead Burg bridge)".into());
+        let json = serde_json::to_string(&map).unwrap();
+        let back: HashMap<String, BTreeSet<String>> = serde_json::from_str(&json).unwrap();
+        assert_eq!(back, map);
     }
 
     #[test]
