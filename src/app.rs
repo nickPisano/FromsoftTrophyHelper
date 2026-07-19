@@ -778,15 +778,18 @@ impl App {
             _ => None,
         };
 
-        // Planner needs its own copy of the rows to sidestep split borrows.
-        let planner_rows: Option<Vec<AchRow>> = match (self.game_view, self.data.get(&appid)) {
-            (GameView::Planner, Some(Loaded::Ready(entry))) => {
+        // Planner and overview need their own copy of the rows to sidestep
+        // split borrows against &mut self UI state.
+        let view_rows: Option<Vec<AchRow>> = match self.data.get(&appid) {
+            Some(Loaded::Ready(entry))
+                if self.game_view == GameView::Planner || selected.is_none() =>
+            {
                 Some(entry.data.achievements.clone())
             }
             _ => None,
         };
 
-        let mut planner_clicked: Option<String> = None;
+        let mut nav_clicked: Option<String> = None;
         egui::CentralPanel::default().show(ui, |ui| {
             ui.add_space(4.0);
             ui.horizontal(|ui| {
@@ -801,9 +804,9 @@ impl App {
             egui::ScrollArea::vertical()
                 .auto_shrink(false)
                 .show(ui, |ui| match self.game_view {
-                    GameView::Planner => match &planner_rows {
+                    GameView::Planner => match &view_rows {
                         Some(rows) => {
-                            planner_clicked = planner_view(ui, game, rows, &self.checklist_done);
+                            nav_clicked = planner_view(ui, game, rows, &self.checklist_done);
                         }
                         None => {
                             ui.add_space(16.0);
@@ -825,12 +828,20 @@ impl App {
                             &mut self.checklist_filter,
                             &mut self.notes,
                         ),
-                        None => game_overview(ui, game, self.connected(), &mut self.settings_open),
+                        None => {
+                            nav_clicked = game_overview(
+                                ui,
+                                game,
+                                view_rows.as_deref(),
+                                self.connected(),
+                                &mut self.settings_open,
+                            );
+                        }
                     },
                 });
         });
 
-        if let Some(api_name) = planner_clicked {
+        if let Some(api_name) = nav_clicked {
             self.selected_ach.insert(appid, api_name);
             self.game_view = GameView::Achievements;
         }
@@ -1082,6 +1093,17 @@ fn game_card_status(ui: &mut egui::Ui, state: Option<&Loaded>) {
                         .small()
                         .color(DIM),
                 );
+                if let Some(next) = suggested_next(&gd.achievements).first() {
+                    ui.label(
+                        egui::RichText::new(format!(
+                            "Next easiest: {} ({:.0}%)",
+                            next.name,
+                            next.percent.unwrap_or(0.0)
+                        ))
+                        .small()
+                        .color(GOLD.gamma_multiply(0.8)),
+                    );
+                }
             } else {
                 ui.label(
                     egui::RichText::new(format!(
@@ -1242,6 +1264,23 @@ fn ach_list_row(
         ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::PointingHand);
     }
     resp.clicked()
+}
+
+/// Locked achievements with known rarity, most common first — the
+/// "you could probably go get these right now" picks.
+fn suggested_next(rows: &[AchRow]) -> Vec<&AchRow> {
+    let mut v: Vec<&AchRow> = rows
+        .iter()
+        .filter(|a| a.unlocked == Some(false) && a.percent.is_some())
+        .collect();
+    v.sort_by(|a, b| {
+        b.percent
+            .unwrap_or(0.0)
+            .partial_cmp(&a.percent.unwrap_or(0.0))
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    v.truncate(3);
+    v
 }
 
 /// (ticked, total) for a checklist, counting only non-header items.
@@ -1509,7 +1548,15 @@ fn ach_details(
         });
 }
 
-fn game_overview(ui: &mut egui::Ui, game: &games::Game, connected: bool, settings_open: &mut bool) {
+/// Returns the api_name of a clicked suggested achievement.
+fn game_overview(
+    ui: &mut egui::Ui,
+    game: &games::Game,
+    rows: Option<&[AchRow]>,
+    connected: bool,
+    settings_open: &mut bool,
+) -> Option<String> {
+    let mut clicked = None;
     ui.add_space(12.0);
     ui.add(
         egui::Image::new(header_art_url(game.appid))
@@ -1527,10 +1574,48 @@ fn game_overview(ui: &mut egui::Ui, game: &games::Game, connected: bool, setting
             *settings_open = true;
         }
     }
+
+    if let Some(rows) = rows {
+        let picks = suggested_next(rows);
+        if !picks.is_empty() {
+            ui.add_space(10.0);
+            ui.label(
+                egui::RichText::new("\u{1F3AF} Suggested next — most players have these")
+                    .strong()
+                    .color(GOLD),
+            );
+            for a in picks {
+                ui.horizontal(|ui| {
+                    if !a.icon_gray.is_empty() {
+                        ui.add(
+                            egui::Image::new(&a.icon_gray)
+                                .fit_to_exact_size(egui::vec2(24.0, 24.0))
+                                .corner_radius(3.0),
+                        );
+                    }
+                    if ui.link(egui::RichText::new(&a.name).strong()).clicked() {
+                        clicked = Some(a.api_name.clone());
+                    }
+                    if let Some(p) = a.percent {
+                        let (rarity, color) = rarity_label(p);
+                        ui.label(egui::RichText::new(format!("{p:.1}%")).small().color(DIM));
+                        ui.label(
+                            egui::RichText::new(format!(" {rarity} "))
+                                .small()
+                                .color(color)
+                                .background_color(color.gamma_multiply(0.15)),
+                        );
+                    }
+                });
+            }
+        }
+    }
+
     ui.add_space(10.0);
     ui.separator();
     ui.add_space(6.0);
     game_notes_and_resources(ui, game);
+    clicked
 }
 
 fn game_notes_and_resources(ui: &mut egui::Ui, game: &games::Game) {
@@ -1729,7 +1814,8 @@ mod tests {
                 .unwrap_or_else(|| panic!("no guide matched {appid} / {name}"));
             assert_eq!(g.missable, missable, "missable flag for {name}");
         }
-        assert!(crate::guides::find(1245620, "Roundtable Hold").is_none());
+        // Sekiro is intentionally not fully covered yet — uncurated names miss.
+        assert!(crate::guides::find(814380, "Sunset Memory").is_none());
     }
 
     #[test]
@@ -1812,6 +1898,208 @@ mod tests {
         let json = serde_json::to_string(&map).unwrap();
         let back: HashMap<String, BTreeSet<String>> = serde_json::from_str(&json).unwrap();
         assert_eq!(back, map);
+    }
+
+    #[test]
+    fn exact_match_beats_substring() {
+        // "Godfrey, First Elden Lord" contains the substring "elden lord",
+        // but must resolve to its own boss entry, not the ending entry.
+        let g = crate::guides::find(1245620, "Godfrey, First Elden Lord").unwrap();
+        assert!(g.matches.contains(&"godfrey, first elden lord"));
+        // "Regal Ancestor Spirit" contains "ancestor spirit".
+        let g = crate::guides::find(1245620, "Regal Ancestor Spirit").unwrap();
+        assert!(g.matches.contains(&"regal ancestor spirit"));
+    }
+
+    #[test]
+    fn full_coverage_for_soulsborne_catalog() {
+        // Every Steam achievement display name in these four games must
+        // resolve to a curated guide (lists sourced from Steam stats pages).
+        let er = [
+            "Roundtable Hold",
+            "Margit, the Fell Omen",
+            "Shardbearer Godrick",
+            "Great Rune",
+            "Red Wolf of Radagon",
+            "Rennala, Queen of the Full Moon",
+            "Leonine Misbegotten",
+            "Royal Knight Loretta",
+            "Shardbearer Radahn",
+            "Mimic Tear",
+            "Godfrey, First Elden Lord",
+            "Shardbearer Morgott",
+            "Magma Wyrm Makar",
+            "God-Slaying Armament",
+            "Fire Giant",
+            "Erdtree Aflame",
+            "Commander Niall",
+            "Shardbearer Rykard",
+            "Astel, Naturalborn of the Void",
+            "Godskin Duo",
+            "Godskin Noble",
+            "Ancestor Spirit",
+            "Maliketh the Black Blade",
+            "Shardbearer Mohg",
+            "Hoarah Loux, Warrior",
+            "Valiant Gargoyles",
+            "Loretta, Knight of the Haligtree",
+            "Elemer of the Briar",
+            "Dragonkin Soldier of Nokstella",
+            "Regal Ancestor Spirit",
+            "Shardbearer Malenia",
+            "Mohg, the Omen",
+            "Dragonlord Placidusax",
+            "Lichdragon Fortissax",
+            "Age of the Stars",
+            "Elden Lord",
+            "Legendary Armaments",
+            "Legendary Talismans",
+            "Legendary Ashen Remains",
+            "Legendary Sorceries and Incantations",
+            "Lord of Frenzied Flame",
+            "Elden Ring",
+        ];
+        let ds1 = [
+            "Enkindle",
+            "Estus Flask",
+            "Reach Lordran",
+            "Ring the Bell (Undead Church)",
+            "Covenant: Way of White",
+            "Ring the Bell (Quelaag's Domain)",
+            "Reach Anor Londo",
+            "Lordvessel",
+            "Rite of Kindling",
+            "Covenant: Chaos Servant",
+            "Art of Abysswalking",
+            "Defeat Seath the Scaleless",
+            "Defeat Gravelord Nito",
+            "Defeat the Four Kings",
+            "Defeat Bed of Chaos",
+            "Covenant: Princess's Guard",
+            "Covenant: Forest Hunter",
+            "Defeat Crossbreed Priscilla",
+            "Defeat the Dark Sun Gwyndolin",
+            "To Link the Fire",
+            "Covenant: Gravelord Servant",
+            "Covenant: Path of the Dragon",
+            "Strongest Weapon",
+            "Covenant: Blade of the Darkmoon",
+            "Covenant: Warrior of Sunlight",
+            "Dark Lord",
+            "Covenant: Darkwraith",
+            "Lightning Weapon",
+            "Raw Weapon",
+            "Divine Weapon",
+            "Enchanted Weapon",
+            "Crystal Weapon",
+            "Wisdom of a Sage",
+            "Chaos Weapon",
+            "Occult Weapon",
+            "Fire Weapon",
+            "Bond of a Pyromancer",
+            "Magic Weapon",
+            "Prayer of a Maiden",
+            "Knight's Honor",
+            "The Dark Soul",
+        ];
+        let ds2 = [
+            "Self Recollection",
+            "This is Dark Souls",
+            "Last Giant",
+            "Covenant of the Meek",
+            "Sinner's Bonfire",
+            "Change of Clothes",
+            "Clangorous Covenant",
+            "Brightstone Bonfire",
+            "Iron Keep Bonfire",
+            "Gulch Bonfire",
+            "Gnawing Covenant",
+            "Supreme Weapon",
+            "Looking Glass Knight",
+            "King's Ring",
+            "Ancient Dragon",
+            "Covenant of the Fittest",
+            "Brilliant Covenant",
+            "Reflections on Disembodiment",
+            "Protector Covenant",
+            "The Heir",
+            "Vendrick",
+            "Sanguinary Covenant",
+            "Abysmal Covenant",
+            "Garrulous Miser",
+            "Selfless Giver",
+            "Holder of the Fort",
+            "Gathering of Exiles",
+            "Covenant of Ancients",
+            "Curious Map",
+            "Smith for Life",
+            "Lucatiel",
+            "Gesture Maestro",
+            "Moonlight Greatsword",
+            "Master of Hexes",
+            "Master of Sorcery",
+            "Master of Miracles",
+            "Master of Pyromancy",
+            "The Dark Soul",
+        ];
+        let ds3 = [
+            "Enkindle",
+            "Embrace the Flame",
+            "Iudex Gundyr",
+            "Vordt of the Boreal Valley",
+            "Covenant: Way of Blue",
+            "Curse-rotted Greatwood",
+            "Covenant: Blue Sentinels",
+            "Crystal Sage",
+            "Lords of Cinder: Abyss Watchers",
+            "Deacons of the Deep",
+            "High Lord Wolnir",
+            "Covenant: Warrior of Sunlight",
+            "Pontiff Sulyvahn",
+            "Covenant: Watchdogs of Farron",
+            "Dancer of the Boreal Valley",
+            "Lord of Cinder: Yhorm the Giant",
+            "Lord of Cinder: Aldrich, Devourer of Gods",
+            "Old Demon King",
+            "Dragonslayer Armour",
+            "Oceiros, the Consumed King",
+            "Untended Graves",
+            "Covenant: Rosaria's Fingers",
+            "Lord of Cinder: Lothric, Younger Prince",
+            "Champion Gundyr",
+            "Supreme Weapon Reinforcement",
+            "Archdragon Peak",
+            "Ancient Wyvern",
+            "The Nameless King",
+            "Covenant: Mound-makers",
+            "Covenant: Aldrich Faithful",
+            "Ultimate Bonfire",
+            "Covenant: Blade of the Darkmoon",
+            "Ultimate Estus",
+            "To Link the First Flame",
+            "The End of Fire",
+            "The Usurpation of Fire",
+            "Master of Infusion",
+            "Master of Sorceries",
+            "Master of Pyromancies",
+            "Master of Miracles",
+            "Master of Expression",
+            "Master of Rings",
+            "The Dark Soul",
+        ];
+        for (appid, names) in [
+            (1245620u32, &er[..]),
+            (570940, &ds1[..]),
+            (335300, &ds2[..]),
+            (374320, &ds3[..]),
+        ] {
+            for name in names {
+                assert!(
+                    crate::guides::find(appid, name).is_some(),
+                    "no curated guide for {appid} / {name}"
+                );
+            }
+        }
     }
 
     #[test]

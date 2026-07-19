@@ -7,8 +7,12 @@ Steam Web API and pairs every achievement with the help you need to finish it:
 - **Your progress, scanned from Steam** — unlocked / locked state and unlock dates, per game.
 - **Global rarity** — the percentage of players who have each achievement, shown as a bar and a
   rarity tag (Common → Ultra rare). The default sort puts the most-earned achievements at the top.
-- **Rules & missable warnings** — curated "read this before you play on" rules for the
-  achievements that can be lost (points of no return, ending lockouts, NPC quest deadlines).
+- **Rules & missable warnings** — every achievement in Elden Ring and Dark Souls 1/2/3 has a
+  hand-curated guide (how to reach it, gate requirements, a strategy note), with "read this
+  before you play on" rules for anything that can be lost (points of no return, ending
+  lockouts, NPC quest deadlines). Questline achievements get ordered, tickable steps.
+- **Suggested next** — each game page surfaces the top locked achievements by global unlock
+  rate, so you always know what to go do right now.
 - **Locations** — where you have to go for the multi-location collectathons.
 - **Resources** — hand-picked wiki checklists and guides per achievement, plus auto-generated
   YouTube / Google guide searches for every achievement in every game.

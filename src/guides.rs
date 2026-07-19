@@ -35,6 +35,9 @@ pub struct Guide {
 /// Look up curated guide data for an achievement. The original DS2 shares
 /// guides with Scholar of the First Sin, and Prepare to Die Edition shares
 /// guides with Dark Souls: Remastered (identical achievement lists).
+///
+/// Exact display-name matches win over substring matches so broad patterns
+/// ("great rune") can't shadow a dedicated entry for a specific achievement.
 pub fn find(appid: u32, display_name: &str) -> Option<&'static Guide> {
     let appid = match appid {
         236430 => 335300,
@@ -44,7 +47,12 @@ pub fn find(appid: u32, display_name: &str) -> Option<&'static Guide> {
     let name = display_name.to_lowercase();
     GUIDES
         .iter()
-        .find(|g| g.appid == appid && g.matches.iter().any(|m| name.contains(m)))
+        .find(|g| g.appid == appid && g.matches.iter().any(|m| *m == name))
+        .or_else(|| {
+            GUIDES
+                .iter()
+                .find(|g| g.appid == appid && g.matches.iter().any(|m| name.contains(m)))
+        })
 }
 
 #[cfg(test)]
@@ -81,7 +89,21 @@ static GUIDES: &[Guide] = &[
             "Moonlight Altar — Cathedral of Manus Celes (give Ranni the Dark Moon Ring)",
         ],
         phase: "Multiple runs",
-        checklist: &[],
+        checklist: &[
+            "## Ranni's questline — in order",
+            "Enter Ranni's service at Ranni's Rise (Three Sisters)",
+            "Meet Blaidd in Siofra River (talk to Ranni's tower crew first)",
+            "Defeat Starscourge Radahn to open Nokron",
+            "Nokron, Night's Sacred Ground: take the Fingerslayer Blade",
+            "Give the Blade to Ranni → receive the Carian Inverted Statue",
+            "Renna's Rise portal → Ainsel River Main: pick up the Miniature Ranni doll",
+            "Talk to the doll three times at an Ainsel River grace",
+            "Defeat the Baleful Shadow in Nokstella → Discarded Palace Key",
+            "Cross the Lake of Rot and defeat Astel, Naturalborn of the Void",
+            "Raya Lucaria Grand Library: open the chest with the key → Dark Moon Ring",
+            "Cathedral of Manus Celes: give Ranni the ring",
+            "After the final boss: use Ranni's blue summon sign — do NOT touch Marika first",
+        ],
         resources: &[
             Resource {
                 label: "Fextralife — Ranni the Witch full questline",
@@ -109,7 +131,15 @@ static GUIDES: &[Guide] = &[
             "Crumbling Farum Azula — Dragonlord Placidusax arena (only place Miquella's Needle can be used)",
         ],
         phase: "Multiple runs",
-        checklist: &[],
+        checklist: &[
+            "## Steps — in order",
+            "Subterranean Shunning-Grounds: fight down to Mohg, the Omen and defeat him",
+            "Strike the altar behind his arena to reveal the hidden shaft",
+            "Platform carefully down to the Frenzied Flame Proscription",
+            "Remove ALL armor, then touch the door — receive the Frenzied Flame",
+            "Beat the final boss and touch Fractured Marika — the frenzied ending plays",
+            "(Escape hatch: finish Millicent's quest, then use Miquella's Needle in Placidusax's arena to un-commit)",
+        ],
         resources: &[
             Resource {
                 label: "Fextralife — Lord of Frenzied Flame ending",
@@ -294,7 +324,18 @@ static GUIDES: &[Guide] = &[
             "Varre quest start — Rose Church, Liurnia",
         ],
         phase: "NG",
-        checklist: &[],
+        checklist: &[
+            "## Route A — Varre's questline",
+            "Talk to Varre at The First Step, then again at the Rose Church (after Godrick + meeting Two Fingers)",
+            "Use the Festering Bloody Fingers to invade three times (NPC invasions count offline)",
+            "Receive the Lord of Blood's Favor cloth",
+            "Soak it in maiden blood (Church of Inhibition, or the dead maiden at Fia's chamber)",
+            "Return it → Pureblood Knight's Medal → teleport to Mohgwyn Palace",
+            "## Route B — no questline",
+            "Reach the Consecrated Snowfield (Haligtree medallion) → far-west waygate portal",
+            "## Finish",
+            "Defeat Mohg, Lord of Blood",
+        ],
         resources: &[
             Resource {
                 label: "Fextralife — Mohg, Lord of Blood",
@@ -321,7 +362,15 @@ static GUIDES: &[Guide] = &[
             "Malenia — Elphael, Brace of the Haligtree (bottom)",
         ],
         phase: "NG",
-        checklist: &[],
+        checklist: &[
+            "## Steps — in order",
+            "Haligtree Secret Medallion (right) — talk to Albus in the Village of the Albinaurics (hit the lone pot illusion)",
+            "Haligtree Secret Medallion (left) — Castle Sol rooftop, past Commander Niall",
+            "Grand Lift of Rold: choose 'hoist secret medallion'",
+            "Ordina, Liturgical Town: solve the evergaol (light all four candles)",
+            "Descend Miquella's Haligtree into Elphael",
+            "Defeat Malenia, Blade of Miquella",
+        ],
         resources: &[Resource {
             label: "Fextralife — Malenia, Blade of Miquella",
             url: "https://eldenring.wiki.fextralife.com/Malenia+Blade+of+Miquella",
@@ -348,7 +397,20 @@ static GUIDES: &[Guide] = &[
             "Kiln of the First Flame — the ending itself",
         ],
         phase: "Multiple runs",
-        checklist: &[],
+        checklist: &[
+            "## Steps — in order, nothing skipped",
+            "Recruit Yoel of Londor on the Undead Settlement road",
+            "Draw out true strength ×5 (free levels → five Dark Sigils) before Yoel dies",
+            "NEVER heal the Dark Sigil with the Fire Keeper",
+            "Meet Yuria of Londor at Firelink after the fifth sigil",
+            "Talk to Anri at Halfway Fortress (Road of Sacrifices)",
+            "Talk to Anri at Firelink after the Deacons of the Deep",
+            "Church of Yorshka: talk to Anri — do NOT reveal the pilgrim assassin",
+            "Talk to Anri at Firelink again after Pontiff Sulyvahn",
+            "Darkmoon Tomb (illusory wall below the Anor Londo spinning stairs): perform the ceremony with the Sword of Avowal",
+            "Talk to Yuria afterwards and keep her alive",
+            "Kiln of the First Flame: ATTACK the flame instead of lighting it",
+        ],
         resources: &[
             Resource {
                 label: "Fextralife — Yuria of Londor questline",
@@ -375,7 +437,15 @@ static GUIDES: &[Guide] = &[
             "Kiln of the First Flame — summon sign after the final boss",
         ],
         phase: "Multiple runs",
-        checklist: &[],
+        checklist: &[
+            "## Steps — in order",
+            "Defeat Oceiros, the Consumed King (Consumed King's Garden)",
+            "Enter Untended Graves behind his arena",
+            "Eyes of a Fire Keeper — illusory wall in the dark Firelink Shrine",
+            "Give the Eyes to the Fire Keeper at (normal) Firelink",
+            "Defeat the Soul of Cinder — do NOT touch the bonfire",
+            "Summon the Fire Keeper with her sign and watch the ending",
+        ],
         resources: &[
             Resource {
                 label: "Fextralife — Endings",
@@ -935,7 +1005,14 @@ static GUIDES: &[Guide] = &[
             "Kaathe appears after the Four Kings die (if Frampt hasn't been served)",
         ],
         phase: "NG",
-        checklist: &[],
+        checklist: &[
+            "## Steps — in order",
+            "Defeat Sif for the Covenant of Artorias ring",
+            "Do NOT place the Lordvessel with Frampt",
+            "Get the Key to the Seal from Ingward (New Londo rooftops) and drain the ruins",
+            "Descend into the Abyss (ring equipped) and defeat the Four Kings",
+            "Talk to Darkstalker Kaathe and join the Darkwraiths",
+        ],
         resources: &[Resource {
             label: "Fextralife — Darkwraith covenant",
             url: "https://darksouls.wiki.fextralife.com/Darkwraith",
@@ -1172,7 +1249,20 @@ static GUIDES: &[Guide] = &[
             "Huntsman's Copse — Felkin",
         ],
         phase: "NG",
-        checklist: &[],
+        checklist: &[
+            "## Pilgrims of Dark steps — in order",
+            "Talk to Darkdiver Grandahl in the Shaded Ruins (under the trapdoor)",
+            "Talk to Grandahl in Black Gulch (side cave ledge)",
+            "Talk to Grandahl in Drangleic Castle (past the Central Castle bonfire) and JOIN",
+            "Clear Dark Chasm of Old #1 and light its flame (1 Human Effigy per entry)",
+            "Clear Dark Chasm of Old #2 and light its flame",
+            "Clear Dark Chasm of Old #3 and light its flame",
+            "Defeat the Darklurker",
+            "## Then finish the collection",
+            "Buy out Felkin (needs 20 INT / 20 FTH)",
+            "Boss-soul hexes from Straid and Ornifex",
+            "World pickup hexes (see wiki list)",
+        ],
         resources: &[
             Resource {
                 label: "Fextralife — DS2 Hexes checklist",
@@ -1391,7 +1481,7 @@ static GUIDES: &[Guide] = &[
     // ------------------------------------------------------------------
     Guide {
         appid: DS3,
-        matches: &["blades of the darkmoon"],
+        matches: &["covenant: blade of the darkmoon", "blades of the darkmoon"],
         missable: true,
         rules: &[
             "Join via Yorshka, hidden above Anor Londo: from the top of the rotating tower mechanism, walk the INVISIBLE bridge from the broken walkway toward the prison tower.",
@@ -1503,6 +1593,1854 @@ static GUIDES: &[Guide] = &[
         resources: &[Resource {
             label: "Fextralife — AC6 log locations (combat & data)",
             url: "https://armoredcore6.wiki.fextralife.com/Combat+Logs",
+        }],
+    },
+    // ==================================================================
+    // ELDEN RING — full coverage (bosses, story, misc)
+    // ==================================================================
+    Guide {
+        appid: ER,
+        matches: &["roundtable hold"],
+        missable: false,
+        rules: &[
+            "Granted for reaching the Roundtable Hold: keep resting at sites of grace and talking to Melina — she extends the invitation early in Limgrave (guaranteed around the time you fight Margit).",
+        ],
+        locations: &["Roundtable Hold — via Melina's invitation at a site of grace"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Roundtable Hold",
+            url: "https://eldenring.wiki.fextralife.com/Roundtable+Hold",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["margit, the fell omen"],
+        missable: false,
+        rules: &[
+            "The first wall. If he's too much, level in Limgrave first, grab Margit's Shackle from Patches' area (pins him twice), and use the Stormveil summon signs by the fog gate.",
+        ],
+        locations: &["Stormveil Castle approach — Castleward Tunnel, Limgrave"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Margit, the Fell Omen",
+            url: "https://eldenring.wiki.fextralife.com/Margit,+The+Fell+Omen",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["red wolf of radagon"],
+        missable: false,
+        rules: &[
+            "Mid-legacy boss of Raya Lucaria Academy (needs the Academy Glintstone Key from behind the sleeping dragon west of the academy).",
+        ],
+        locations: &["Raya Lucaria Academy — Debate Parlor, Liurnia"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Red Wolf of Radagon",
+            url: "https://eldenring.wiki.fextralife.com/Red+Wolf+of+Radagon",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["rennala, queen of the full moon"],
+        missable: false,
+        rules: &[
+            "Raya Lucaria's legacy boss. Phase 1: break the singing children's barrier by killing the glowing pupil three times. Phase 2 is a proper duel — her spells punish greed but she has low poise.",
+            "Defeating her also unlocks respeccing (Larval Tears).",
+        ],
+        locations: &["Raya Lucaria Academy — Grand Library, Liurnia"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Rennala, Queen of the Full Moon",
+            url: "https://eldenring.wiki.fextralife.com/Rennala+Queen+of+the+Full+Moon",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["leonine misbegotten"],
+        missable: false,
+        rules: &[
+            "Castle Morne's boss at the southern tip of the Weeping Peninsula — also the end of Irina and Edgar's questline, and drops the Grafted Blade Greatsword (a Legendary Armament).",
+        ],
+        locations: &["Castle Morne — beach behind the castle, Weeping Peninsula"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Leonine Misbegotten",
+            url: "https://eldenring.wiki.fextralife.com/Leonine+Misbegotten",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["royal knight loretta"],
+        missable: false,
+        rules: &[
+            "Guards Caria Manor's inner grounds in northwest Liurnia — beating her opens the Three Sisters area (Ranni's questline) and drops Loretta's Greatbow.",
+        ],
+        locations: &["Caria Manor — upper garden, Liurnia"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Royal Knight Loretta",
+            url: "https://eldenring.wiki.fextralife.com/Royal+Knight+Loretta",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["mimic tear"],
+        missable: false,
+        rules: &[
+            "The boss copies your current loadout — a classic trick is to unequip everything (or switch to weak gear) before the fog wall, then re-equip once it has copied you.",
+        ],
+        locations: &["Nokron, Eternal City — reached after Starscourge Radahn falls"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Mimic Tear (boss)",
+            url: "https://eldenring.wiki.fextralife.com/Mimic+Tear",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["godfrey, first elden lord"],
+        missable: false,
+        rules: &[
+            "The golden-shade version in Leyndell, Royal Capital — a mandatory story boss on the way to Morgott. (His true fight comes later as Hoarah Loux.)",
+        ],
+        locations: &["Leyndell, Royal Capital — Erdtree Sanctuary approach"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Godfrey, First Elden Lord",
+            url: "https://eldenring.wiki.fextralife.com/Godfrey,+First+Elden+Lord",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["magma wyrm makar"],
+        missable: false,
+        rules: &[
+            "Boss of the Ruin-Strewn Precipice — the alternative (no-Great-Runes) route from Liurnia up to the Altus Plateau. Optional if you use the Grand Lift of Dectus instead.",
+        ],
+        locations: &["Ruin-Strewn Precipice — northeast Liurnia ravine"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Magma Wyrm Makar",
+            url: "https://eldenring.wiki.fextralife.com/Magma+Wyrm+Makar",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["god-slaying armament"],
+        missable: false,
+        rules: &[
+            "Upgrade any armament to its highest stage: +25 (standard, needs an Ancient Dragon Smithing Stone) or +10 (somber, needs a Somber Ancient Dragon Smithing Stone). The ancient stones are rare finite finds in late areas — Farum Azula, Mountaintops, and quest rewards.",
+        ],
+        locations: &["Roundtable Hold — Smithing Master Hewg, with an ancient smithing stone"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Ancient Dragon Smithing Stone locations",
+            url: "https://eldenring.wiki.fextralife.com/Ancient+Dragon+Smithing+Stone",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["fire giant"],
+        missable: false,
+        rules: &[
+            "Mandatory boss at the Flame Peak, Mountaintops of the Giants. Torrent is allowed — stay at his heels; in phase 2 target the flaming eye. Ranged builds trivialize phase 1 by sniping the leg brace.",
+        ],
+        locations: &["Mountaintops of the Giants — Flame Peak"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Fire Giant",
+            url: "https://eldenring.wiki.fextralife.com/Fire+Giant",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["erdtree aflame"],
+        missable: false,
+        rules: &[
+            "Story flag: after the Fire Giant, commit the cardinal sin at the Forge of the Giants.",
+            "POINT OF NO RETURN warning: this eventually leads to Leyndell becoming the Ashen Capital (after Maliketh). Grab the Bolt of Gransax and finish Leyndell business first if you're chasing Legendary Armaments.",
+        ],
+        locations: &["Forge of the Giants — Mountaintops of the Giants"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Walkthrough (Forge of the Giants)",
+            url: "https://eldenring.wiki.fextralife.com/Forge+of+the+Giants",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["commander niall"],
+        missable: false,
+        rules: &[
+            "Castle Sol's boss (Mountaintops). Kill his two summoned knights first — Bewitching Branches charm them to your side. Drops the left half of the Haligtree Secret Medallion.",
+        ],
+        locations: &["Castle Sol — Mountaintops of the Giants"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Commander Niall",
+            url: "https://eldenring.wiki.fextralife.com/Commander+Niall",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["astel, naturalborn of the void"],
+        missable: false,
+        rules: &[
+            "Fought at the Grand Cloister past the Lake of Rot during Ranni's questline. Beware the grab (teleport behind you) and the meteor volley — stay mid-range and punish after its laser.",
+        ],
+        locations: &["Grand Cloister — beyond the Lake of Rot, Ainsel River"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Astel, Naturalborn of the Void",
+            url: "https://eldenring.wiki.fextralife.com/Astel,+Naturalborn+of+the+Void",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["godskin duo"],
+        missable: false,
+        rules: &[
+            "Crumbling Farum Azula's gank fight — the pair shares one health bar. Sleep is the famous cheese: Sleep Pots or St. Trina's Torch shut one down while you kill the other. The pillars are your friends.",
+        ],
+        locations: &["Crumbling Farum Azula — Dragon Temple"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Godskin Duo",
+            url: "https://eldenring.wiki.fextralife.com/Godskin+Duo",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["godskin noble"],
+        missable: false,
+        rules: &[
+            "The rolling one. Fought at the Temple of Eiglay in Volcano Manor (mandatory for the Rykard route). His flame attacks are slow — stay close to his left leg.",
+        ],
+        locations: &["Volcano Manor — Temple of Eiglay, Mt. Gelmir"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Godskin Noble",
+            url: "https://eldenring.wiki.fextralife.com/Godskin+Noble",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["ancestor spirit"],
+        missable: false,
+        rules: &[
+            "Summoned by lighting the eight flame obelisks around the dead deer in Siofra River, then interacting with the altar. Entirely optional and easy to miss — the underground is worth the trip.",
+        ],
+        locations: &["Siofra River — Hallowhorn Grounds"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Ancestor Spirit",
+            url: "https://eldenring.wiki.fextralife.com/Ancestor+Spirit",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["regal ancestor spirit"],
+        missable: false,
+        rules: &[
+            "The stronger version in Nokron: light the flame obelisks around the Ancestral Woods (one requires a rooftop drop route), then touch the deer skeleton. Heals itself — burst it down.",
+        ],
+        locations: &["Nokron, Eternal City — Ancestral Woods, Hallowhorn Grounds"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Regal Ancestor Spirit",
+            url: "https://eldenring.wiki.fextralife.com/Regal+Ancestor+Spirit",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["maliketh the black blade"],
+        missable: false,
+        rules: &[
+            "Farum Azula's final boss. His Destined Death attacks reduce max HP — the Blasphemous Claw (from Knight Bernahl's invasion) parries his black-blade moves in phase 2.",
+            "WARNING: defeating him turns Leyndell into the Ashen Capital. Grab the Bolt of Gransax and any Leyndell business FIRST.",
+        ],
+        locations: &["Crumbling Farum Azula — Maliketh's arena, past the Godskin Duo"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Maliketh, the Black Blade",
+            url: "https://eldenring.wiki.fextralife.com/Maliketh,+the+Black+Blade",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["hoarah loux, warrior"],
+        missable: false,
+        rules: &[
+            "Godfrey's true form in the Ashen Capital, right before the final boss. His grabs do enormous damage — jump his ground slams and keep stamina in reserve for the wrestling combos.",
+        ],
+        locations: &["Leyndell, Ashen Capital — Elden Throne approach"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Hoarah Loux, Warrior",
+            url: "https://eldenring.wiki.fextralife.com/Hoarah+Loux,+Warrior",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["valiant gargoyles"],
+        missable: false,
+        rules: &[
+            "Duo fight at the Siofra Aqueduct (deep Nokron) — their poison breath stacks fast. Beating them opens the coffin ride to the Deeproot Depths.",
+        ],
+        locations: &["Siofra Aqueduct — Nokron, Eternal City"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Valiant Gargoyle",
+            url: "https://eldenring.wiki.fextralife.com/Valiant+Gargoyle",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["loretta, knight of the haligtree"],
+        missable: false,
+        rules: &[
+            "The real Loretta guarding Elphael's entrance in Miquella's Haligtree (secret area — see Shardbearer Malenia for the route).",
+        ],
+        locations: &["Miquella's Haligtree — before Elphael"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Loretta, Knight of the Haligtree",
+            url: "https://eldenring.wiki.fextralife.com/Loretta,+Knight+of+the+Haligtree",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["elemer of the briar"],
+        missable: false,
+        rules: &[
+            "Boss of The Shaded Castle in the poison marsh between Altus and Mt. Gelmir. Drops the Marais Executioner's Sword (a Legendary Armament).",
+        ],
+        locations: &["The Shaded Castle — northern Altus Plateau"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Elemer of the Briar",
+            url: "https://eldenring.wiki.fextralife.com/Elemer+of+the+Briar",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["dragonkin soldier of nokstella"],
+        missable: false,
+        rules: &[
+            "Found in the Ainsel River underground (reachable via the Ainsel River Well in Liurnia — no questline required). Lightning resistance helps.",
+        ],
+        locations: &["Ainsel River — below Nokstella"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Dragonkin Soldier of Nokstella",
+            url: "https://eldenring.wiki.fextralife.com/Dragonkin+Soldier+of+Nokstella",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["mohg, the omen"],
+        missable: false,
+        rules: &[
+            "The Shunning-Grounds version of Mohg beneath Leyndell (not the shardbearer). Behind his arena lies the hidden route to the Frenzied Flame — strike the altar after the fight.",
+        ],
+        locations: &["Subterranean Shunning-Grounds — Cathedral of the Forsaken, beneath Leyndell"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Mohg, the Omen",
+            url: "https://eldenring.wiki.fextralife.com/Mohg,+the+Omen",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["dragonlord placidusax"],
+        missable: false,
+        rules: &[
+            "Secret boss of Farum Azula: from the Beside the Great Bridge grace, drop to the ledge outside and 'lie down' at the marked spot at the arena's edge to be carried to him.",
+            "This arena is also the only place Miquella's Needle can be used to cure the Frenzied Flame.",
+        ],
+        locations: &["Crumbling Farum Azula — hidden platform below the Great Bridge"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Dragonlord Placidusax",
+            url: "https://eldenring.wiki.fextralife.com/Dragonlord+Placidusax",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["lichdragon fortissax"],
+        missable: true,
+        rules: &[
+            "Locked behind Fia's questline: progress her talks at the Roundtable/Deeproot Depths, give her the Cursemark of Death (from Ranni's quest at the Divine Tower of Liurnia), then enter the Prince of Death's cocoon in Fia's dream.",
+            "Killing Fia or D's brother early can strand the quest — treat as missable per playthrough.",
+        ],
+        locations: &["Deeproot Depths — Fia's dream, via the great cocoon"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Lichdragon Fortissax",
+            url: "https://eldenring.wiki.fextralife.com/Lichdragon+Fortissax",
+        }],
+    },
+    Guide {
+        appid: ER,
+        matches: &["elden ring"],
+        missable: false,
+        rules: &[
+            "The platinum: every other achievement. Biggest planning items are the three endings (save backup before the final boss) and the four Legendary collections — everything else falls out of a thorough playthrough.",
+        ],
+        locations: &["Everywhere, Tarnished"],
+        phase: "Multiple runs",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Achievements overview",
+            url: "https://eldenring.wiki.fextralife.com/Trophy+%26+Achievement+Guide",
+        }],
+    },
+    // ==================================================================
+    // DARK SOULS III — full coverage
+    // ==================================================================
+    Guide {
+        appid: DS3,
+        matches: &["enkindle"],
+        missable: false,
+        rules: &["Light any bonfire flame — happens naturally in the first minutes."],
+        locations: &["Cemetery of Ash — first bonfire"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS3 Wikidot — Achievements",
+            url: "http://darksouls3.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["embrace the flame"],
+        missable: false,
+        rules: &[
+            "Become a Host of Embers: use an Ember item, or simply defeat Iudex Gundyr (boss kills restore ember status).",
+        ],
+        locations: &["Anywhere — use an Ember"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS3 Wikidot — Achievements",
+            url: "http://darksouls3.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["iudex gundyr"],
+        missable: false,
+        rules: &[
+            "The tutorial boss. Pull the sword from his chest to start the fight; his phase-2 serpent form is weak to fire and staggers to charged heavies.",
+        ],
+        locations: &["Cemetery of Ash"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Iudex Gundyr",
+            url: "https://darksouls3.wiki.fextralife.com/Iudex+Gundyr",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["vordt of the boreal valley"],
+        missable: false,
+        rules: &[
+            "First real boss of the High Wall. Stay under his chin and strafe left; in phase 2 sprint TOWARD him after the charge to avoid the frost breath.",
+        ],
+        locations: &["High Wall of Lothric — gate to the Undead Settlement"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Vordt of the Boreal Valley",
+            url: "https://darksouls3.wiki.fextralife.com/Vordt+of+the+Boreal+Valley",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["covenant: way of blue"],
+        missable: false,
+        rules: &[
+            "Talk to Emma, the High Priestess in the High Wall's cathedral (where you get the Small Lothric Banner) and accept the covenant.",
+        ],
+        locations: &["High Wall of Lothric — Emma's cathedral"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Way of Blue",
+            url: "https://darksouls3.wiki.fextralife.com/Way+of+Blue",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["curse-rotted greatwood"],
+        missable: false,
+        rules: &[
+            "Optional boss in the Undead Settlement — hit the white egg sacs; the real fight starts when the floor collapses (aim for the arm-hand and the sac on its groin).",
+            "Join the Mound-makers BEFORE killing it if you want the easy covenant route (see that entry).",
+        ],
+        locations: &["Undead Settlement — pit arena"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Curse-Rotted Greatwood",
+            url: "https://darksouls3.wiki.fextralife.com/Curse-Rotted+Greatwood",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["covenant: blue sentinels"],
+        missable: false,
+        rules: &[
+            "Talk to Horace the Hushed at the Halfway Fortress bonfire (Road of Sacrifices) — with Anri — and accept. Don't attack him first.",
+        ],
+        locations: &["Road of Sacrifices — Halfway Fortress"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Blue Sentinels",
+            url: "https://darksouls3.wiki.fextralife.com/Blue+Sentinels",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["crystal sage"],
+        missable: false,
+        rules: &[
+            "Road of Sacrifices boss — kill the clones (they die in one hit and don't fire homing spells); the real Sage takes bonus damage from strike weapons and staggers easily.",
+        ],
+        locations: &["Road of Sacrifices — before the Cathedral of the Deep"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Crystal Sage",
+            url: "https://darksouls3.wiki.fextralife.com/Crystal+Sage",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["lords of cinder: abyss watchers"],
+        missable: false,
+        rules: &[
+            "First Lord of Cinder, end of Farron Keep. Phase 1: let the red-eyed watcher fight alongside you. Phase 2 adds fire trails — stay aggressive, he has low HP.",
+        ],
+        locations: &["Farron Keep — after lighting the three flames"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Abyss Watchers",
+            url: "https://darksouls3.wiki.fextralife.com/Abyss+Watchers",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["deacons of the deep"],
+        missable: false,
+        rules: &[
+            "Kill the red-glowing deacon to damage the horde; in phase 2 burst down Archdeacon Royce before the curse bar fills. AoE weapons and pyromancy shine.",
+        ],
+        locations: &["Cathedral of the Deep"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Deacons of the Deep",
+            url: "https://darksouls3.wiki.fextralife.com/Deacons+of+the+Deep",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["high lord wolnir"],
+        missable: false,
+        rules: &[
+            "Break the three glowing bracelets — everything else is a distraction. Watch the darkness wave (sprint back) and the skeleton adds near the end.",
+        ],
+        locations: &["Catacombs of Carthus — goblet drop"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — High Lord Wolnir",
+            url: "https://darksouls3.wiki.fextralife.com/High+Lord+Wolnir",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["covenant: warrior of sunlight"],
+        missable: false,
+        rules: &[
+            "Pick up the Warrior of Sunlight tome in the Undead Settlement: in the building with the estus-soup cauldron, drop through the hole in the floor near the fireplace.",
+        ],
+        locations: &["Undead Settlement — altar room under the soup building"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Warriors of Sunlight (DS3)",
+            url: "https://darksouls3.wiki.fextralife.com/Warrior+of+Sunlight",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["pontiff sulyvahn"],
+        missable: false,
+        rules: &[
+            "The mid-game skill check. His delayed swings punish panic rolls — dodge INTO the swords. Phase 2 clone: kill it fast or trade aggressively. Londor Pale Shade and swordmaster summons available.",
+        ],
+        locations: &["Irithyll of the Boreal Valley — cathedral"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Pontiff Sulyvahn",
+            url: "https://darksouls3.wiki.fextralife.com/Pontiff+Sulyvahn",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["covenant: watchdogs of farron"],
+        missable: false,
+        rules: &[
+            "Speak to the Old Wolf of Farron: from the Keep Ruins bonfire area, ride the ladder-tower elevator up to the sleeping wolf and accept.",
+        ],
+        locations: &["Farron Keep — Old Wolf of Farron tower"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Watchdogs of Farron",
+            url: "https://darksouls3.wiki.fextralife.com/Watchdogs+of+Farron",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["dancer of the boreal valley"],
+        missable: false,
+        rules: &[
+            "Triggers after the third Lord of Cinder (or by killing Emma early — don't, unless you're sequence-breaking on purpose). Stay behind her hips; phase 2's spin combo demands patience.",
+        ],
+        locations: &["High Wall of Lothric — Emma's cathedral"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Dancer of the Boreal Valley",
+            url: "https://darksouls3.wiki.fextralife.com/Dancer+of+the+Boreal+Valley",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["lord of cinder: yhorm the giant"],
+        missable: false,
+        rules: &[
+            "Grab Storm Ruler from beside his throne (or from Siegward): charge its skill and release for massive damage — it's the intended mechanic. Complete Siegward's questline for the best version of this fight.",
+        ],
+        locations: &["Profaned Capital — throne room"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Yhorm the Giant",
+            url: "https://darksouls3.wiki.fextralife.com/Yhorm+the+Giant",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["lord of cinder: aldrich, devourer of gods"],
+        missable: false,
+        rules: &[
+            "Anor Londo's Lord of Cinder. Attack the tail-end body, not the head. Sprint AWAY along the arena edge during the arrow rain; fire resistance helps in phase 2.",
+        ],
+        locations: &["Anor Londo — cathedral throne"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Aldrich, Devourer of Gods",
+            url: "https://darksouls3.wiki.fextralife.com/Aldrich,+Devourer+of+Gods",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["old demon king"],
+        missable: false,
+        rules: &[
+            "Optional boss of Smouldering Lake. Max fire resistance, stay at his sides, and back off for the death-explosion when he's nearly dead. Knight Slayer Tsorig's summon tanks well.",
+        ],
+        locations: &["Smouldering Lake — ruins arena"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Old Demon King",
+            url: "https://darksouls3.wiki.fextralife.com/Old+Demon+King",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["dragonslayer armour"],
+        missable: false,
+        rules: &[
+            "Lothric Castle bridge fight. The armour staggers to shield-breaks and charged heavies; watch the Pilgrim Butterflies' projectiles from the sides in phase 2.",
+        ],
+        locations: &["Lothric Castle — cathedral bridge"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Dragonslayer Armour",
+            url: "https://darksouls3.wiki.fextralife.com/Dragonslayer+Armour",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["oceiros, the consumed king"],
+        missable: false,
+        rules: &[
+            "Optional boss in the Consumed King's Garden (drop down from the Dancer's arena side path). Phase 2 charges track hard — hug his left hind leg. Untended Graves lies behind his arena.",
+        ],
+        locations: &["Consumed King's Garden — below Lothric Castle"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Oceiros, the Consumed King",
+            url: "https://darksouls3.wiki.fextralife.com/Oceiros,+the+Consumed+King",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["untended graves"],
+        missable: false,
+        rules: &[
+            "Hidden area: behind Oceiros' arena, hit the illusory wall at the back of the room with the chest. A dark mirror of the Cemetery of Ash — also home to the Eyes of a Fire Keeper (End of Fire ending).",
+        ],
+        locations: &["Behind Oceiros — Consumed King's Garden"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Untended Graves",
+            url: "https://darksouls3.wiki.fextralife.com/Untended+Graves",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["champion gundyr"],
+        missable: false,
+        rules: &[
+            "Untended Graves' guardian — the aggressive true form of Iudex. He punishes passive play; stay point-blank and dodge into his swings. Parry builds can trivialize him.",
+        ],
+        locations: &["Untended Graves"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Champion Gundyr",
+            url: "https://darksouls3.wiki.fextralife.com/Champion+Gundyr",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["supreme weapon reinforcement"],
+        missable: false,
+        rules: &[
+            "Reinforce any weapon to +10 (or +5 for special weapons): needs a Titanite Slab — guaranteed slabs come from late areas and quest rewards (e.g., Grand Archives, Siegward's quest).",
+        ],
+        locations: &["Firelink Shrine — Blacksmith Andre, with a Titanite Slab"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Titanite Slab locations",
+            url: "https://darksouls3.wiki.fextralife.com/Titanite+Slab",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["archdragon peak"],
+        missable: false,
+        rules: &[
+            "Secret area: from the Irithyll Dungeon cell overlooking the mountain (near the lift), use the Path of the Dragon gesture — obtained from the dead dragon-worshipper at the Consumed King's Garden altar.",
+        ],
+        locations: &["Irithyll Dungeon — meditation spot; gesture from Consumed King's Garden"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Archdragon Peak",
+            url: "https://darksouls3.wiki.fextralife.com/Archdragon+Peak",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["ancient wyvern"],
+        missable: false,
+        rules: &[
+            "A puzzle boss: run past it, climb the side route to the platform above its head, and plunge-attack for the instant kill.",
+        ],
+        locations: &["Archdragon Peak — entrance arena"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Ancient Wyvern",
+            url: "https://darksouls3.wiki.fextralife.com/Ancient+Wyvern",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["the nameless king"],
+        missable: false,
+        rules: &[
+            "Widely considered the hardest boss in the base game — ring the Great Belfry bell to summon the storm. Phase 1: attack the wyvern's head. Phase 2: dodge on his wind-up sounds, not on sight.",
+            "Lightning protection for phase 2; the fight rewards patience over greed.",
+        ],
+        locations: &["Archdragon Peak — Great Belfry"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — The Nameless King",
+            url: "https://darksouls3.wiki.fextralife.com/Nameless+King",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["lord of cinder: lothric, younger prince"],
+        missable: false,
+        rules: &[
+            "The final Lord of Cinder atop the Grand Archives. Kill Lothric (the rider) — when Lorian falls, burst the prince before the revival prayer finishes.",
+        ],
+        locations: &["Grand Archives — twin princes' arena"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Lorian and Lothric",
+            url: "https://darksouls3.wiki.fextralife.com/Twin+Princes",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["to link the first flame"],
+        missable: false,
+        rules: &[
+            "The default ending: after the Soul of Cinder, touch the bonfire. If you're collecting all three ending achievements, do this LAST or from a backed-up save.",
+        ],
+        locations: &["Kiln of the First Flame"],
+        phase: "Multiple runs",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Endings",
+            url: "https://darksouls3.wiki.fextralife.com/Endings",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["master of infusion"],
+        missable: false,
+        rules: &[
+            "Perform every infusion type once. Give Andre all four coals: Farron Coal (Road of Sacrifices), Sage's Coal (Farron Keep), Profaned Coal (Irithyll Dungeon), Giant's Coal (Anor Londo). Infusing one dagger repeatedly with each gem works.",
+        ],
+        locations: &["Firelink Shrine — Andre, after delivering all coals"],
+        phase: "NG",
+        checklist: &[
+            "Farron Coal (Road of Sacrifices)",
+            "Sage's Coal (Farron Keep)",
+            "Profaned Coal (Irithyll Dungeon)",
+            "Giant's Coal (Anor Londo)",
+            "Performed every infusion type once",
+        ],
+        resources: &[Resource {
+            label: "Fextralife — Coals & infusion",
+            url: "https://darksouls3.wiki.fextralife.com/Infusion",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["master of expression"],
+        missable: true,
+        rules: &[
+            "Learn all 33 gestures — several come from NPC questlines and can be permanently missed if quests fail (Sirris, Siegward, Orbeck, Yuria, covenant joins all teach gestures).",
+            "Follow a gesture checklist alongside your NPC quests; the Path of the Dragon gesture (Consumed King's Garden) is the famous one people miss.",
+        ],
+        locations: &["Everywhere — NPC quests, covenants, and one corpse (Path of the Dragon)"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Gestures checklist",
+            url: "https://darksouls3.wiki.fextralife.com/Gestures",
+        }],
+    },
+    Guide {
+        appid: DS3,
+        matches: &["the dark soul"],
+        missable: false,
+        rules: &[
+            "The platinum: every other achievement. Pace yourself across the NG/NG+/NG++ ring run and keep the NPC questlines alive — the spell and gesture masters are where runs go wrong.",
+        ],
+        locations: &["Everywhere, Ashen One"],
+        phase: "NG++",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS3 Wikidot — Achievements",
+            url: "http://darksouls3.wikidot.com/achievements",
+        }],
+    },
+    // ==================================================================
+    // DARK SOULS: REMASTERED / PTDE — full coverage
+    // ==================================================================
+    Guide {
+        appid: DS1,
+        matches: &["enkindle"],
+        missable: false,
+        rules: &[
+            "Kindle any bonfire (spend a humanity at it) — not just resting; use the Kindle option.",
+        ],
+        locations: &["Any bonfire, with soft humanity"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Achievements",
+            url: "http://darksouls.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["estus flask"],
+        missable: false,
+        rules: &["Given by Oscar of Astora during the Undead Asylum tutorial — unmissable."],
+        locations: &["Northern Undead Asylum"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Achievements",
+            url: "http://darksouls.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["reach lordran"],
+        missable: false,
+        rules: &["The crow carries you from the Asylum to Firelink Shrine — story progress."],
+        locations: &["Firelink Shrine"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Achievements",
+            url: "http://darksouls.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["ring the bell (undead church)"],
+        missable: false,
+        rules: &[
+            "Defeat the Bell Gargoyles atop the Undead Parish and ring the first Bell of Awakening. Solaire's summon sign sits before the fog gate.",
+        ],
+        locations: &["Undead Parish — bell tower"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Bell Gargoyles",
+            url: "https://darksouls.wiki.fextralife.com/Bell+Gargoyle",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["ring the bell (quelaag's domain)"],
+        missable: false,
+        rules: &[
+            "Defeat Chaos Witch Quelaag below Blighttown and ring the second Bell of Awakening behind her arena.",
+        ],
+        locations: &["Quelaag's Domain — below Blighttown swamp"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Chaos Witch Quelaag",
+            url: "https://darksouls.wiki.fextralife.com/Chaos+Witch+Quelaag",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["covenant: way of white"],
+        missable: false,
+        rules: &[
+            "Easiest covenant: talk to Petrus of Thorolund at Firelink Shrine and join (or start as a Cleric — but joining via Petrus pops it reliably).",
+        ],
+        locations: &["Firelink Shrine — Petrus"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Way of White",
+            url: "https://darksouls.wiki.fextralife.com/Way+of+White",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["reach anor londo"],
+        missable: false,
+        rules: &[
+            "Ring both bells, clear Sen's Fortress, and the bat-wing demons carry you up. (This trophy occasionally fails to fire — it self-corrects next playthrough.)",
+        ],
+        locations: &["Anor Londo — after Sen's Fortress"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Achievements",
+            url: "http://darksouls.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["lordvessel"],
+        missable: false,
+        rules: &[
+            "Defeat Ornstein & Smough, then receive the Lordvessel from Gwynevere. (If you're chasing the Darkwraith covenant, do NOT place it with Frampt afterwards.)",
+        ],
+        locations: &["Anor Londo — Gwynevere's chamber"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Ornstein & Smough",
+            url: "https://darksouls.wiki.fextralife.com/Ornstein+and+Smough",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["rite of kindling"],
+        missable: false,
+        rules: &["Defeat Pinwheel in the Catacombs — unlocks kindling bonfires to 20 estus."],
+        locations: &["The Catacombs — Pinwheel's tomb"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Pinwheel",
+            url: "https://darksouls.wiki.fextralife.com/Pinwheel",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["art of abysswalking"],
+        missable: false,
+        rules: &[
+            "Defeat Great Grey Wolf Sif in Darkroot Garden for the Covenant of Artorias ring — required to survive the Abyss (Four Kings).",
+        ],
+        locations: &["Darkroot Garden — behind the Crest of Artorias door"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Great Grey Wolf Sif",
+            url: "https://darksouls.wiki.fextralife.com/Great+Grey+Wolf+Sif",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["defeat gravelord nito"],
+        missable: false,
+        rules: &[
+            "Lord Soul boss beneath the Tomb of the Giants (needs the Lordvessel). Kill the small skeletons first — the giant ones only die permanently to divine weapons.",
+        ],
+        locations: &["Tomb of the Giants — Nito's domain"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Gravelord Nito",
+            url: "https://darksouls.wiki.fextralife.com/Nito",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["defeat bed of chaos"],
+        missable: false,
+        rules: &[
+            "Break the two side orbs, then jump into the center. Progress persists through deaths — each orb stays broken. Sprint-jump the floor collapse and don't fight it fair (there is no fair).",
+        ],
+        locations: &["Lost Izalith"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Bed of Chaos",
+            url: "https://darksouls.wiki.fextralife.com/Bed+of+Chaos",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["defeat the four kings"],
+        missable: false,
+        rules: &[
+            "In the Abyss (Covenant of Artorias ring required). DPS race: heavy armor + high damage beats finesse — kill each king before the next spawns.",
+        ],
+        locations: &["The Abyss — below New Londo Ruins"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Four Kings",
+            url: "https://darksouls.wiki.fextralife.com/Four+Kings",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["defeat seath the scaleless"],
+        missable: false,
+        rules: &[
+            "First visit to his crystal cave is a scripted death (or grab the doll route) — in the real fight, break the Primordial Crystal behind him to make him mortal. Cut his blue tail for the Moonlight Greatsword while you're there.",
+        ],
+        locations: &["Crystal Cave — beyond The Duke's Archives"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Seath the Scaleless",
+            url: "https://darksouls.wiki.fextralife.com/Seath+the+Scaleless",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["defeat the dark sun gwyndolin"],
+        missable: false,
+        rules: &[
+            "Optional boss behind the illusory fog below Anor Londo's rotating stairs (needs the Darkmoon Seance Ring, from the Catacombs illusory wall).",
+            "WARNING: if you want the Blade of the Darkmoon covenant achievement, JOIN IT FIRST — killing Gwyndolin locks the covenant for the playthrough.",
+        ],
+        locations: &["Darkmoon Tomb — below Anor Londo"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Dark Sun Gwyndolin",
+            url: "https://darksouls.wiki.fextralife.com/Dark+Sun+Gwyndolin",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["defeat crossbreed priscilla"],
+        missable: false,
+        rules: &[
+            "Optional boss of the Painted World of Ariamis — enter via the huge painting in Anor Londo while holding the Peculiar Doll (Undead Asylum revisit, your old cell).",
+            "She turns invisible: watch the snow footprints. Cut her tail first for Priscilla's Dagger (Knight's Honor).",
+        ],
+        locations: &["Painted World of Ariamis — reached from Anor Londo"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Crossbreed Priscilla",
+            url: "https://darksouls.wiki.fextralife.com/Crossbreed+Priscilla",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["to link the fire"],
+        missable: false,
+        rules: &[
+            "After Gwyn falls, touch the bonfire in the Kiln to link the fire. For both ending achievements in one cycle, back up your save before killing Gwyn.",
+        ],
+        locations: &["Kiln of the First Flame"],
+        phase: "Multiple runs",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Endings (DS1)",
+            url: "https://darksouls.wiki.fextralife.com/Endings",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["dark lord"],
+        missable: false,
+        rules: &[
+            "After Gwyn falls, walk OUT of the arena instead of touching the bonfire — the Dark Lord ending plays once you cross the exit.",
+        ],
+        locations: &["Kiln of the First Flame — walk away"],
+        phase: "Multiple runs",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Endings (DS1)",
+            url: "https://darksouls.wiki.fextralife.com/Endings",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["strongest weapon"],
+        missable: false,
+        rules: &[
+            "Reinforce any standard weapon to +15: give Andre the Large Ember (Depths, chest room near the butcher) for +10, then the Very Large Ember (New Londo Ruins, after draining the water) for +15.",
+        ],
+        locations: &["Undead Parish — Andre, with both embers"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["raw weapon"],
+        missable: false,
+        rules: &[
+            "Ascend a +5 weapon down the Raw path to Raw +5 at Andre — requires the Large Ember (Depths).",
+        ],
+        locations: &["Undead Parish — Andre"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["crystal weapon"],
+        missable: false,
+        rules: &[
+            "Ascend a +10 weapon to Crystal and reinforce to Crystal +5 at the Giant Blacksmith — requires the Crystal Ember (The Duke's Archives). Crystal gear can't be repaired; use a throwaway weapon.",
+        ],
+        locations: &["Anor Londo — Giant Blacksmith"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["lightning weapon"],
+        missable: false,
+        rules: &[
+            "Ascend a +10 weapon to Lightning and reinforce to Lightning +5 at the Giant Blacksmith — no ember needed.",
+        ],
+        locations: &["Anor Londo — Giant Blacksmith"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["magic weapon"],
+        missable: false,
+        rules: &[
+            "Ascend a +5 weapon to Magic (Rickert of Vinheim, New Londo) and reinforce to Magic +10 — the +6..+10 range needs the Large Magic Ember from The Duke's Archives.",
+        ],
+        locations: &["New Londo Ruins — Rickert"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["enchanted weapon"],
+        missable: false,
+        rules: &[
+            "Ascend a Magic +5 weapon to Enchanted and reinforce to Enchanted +5 at Rickert — requires the Enchanted Ember (Darkroot Garden, mushroom area chest).",
+        ],
+        locations: &["New Londo Ruins — Rickert"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["divine weapon"],
+        missable: false,
+        rules: &[
+            "Ascend a +5 weapon to Divine (Andre, with the Divine Ember from Darkroot Garden) and reinforce to Divine +10 — the +6..+10 range needs the Large Divine Ember (Tomb of the Giants).",
+        ],
+        locations: &["Undead Parish — Andre"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["occult weapon"],
+        missable: false,
+        rules: &[
+            "Ascend a Divine +5 weapon to Occult and reinforce to Occult +5 at Andre — requires the Dark Ember (Painted World, behind the Annex Key door).",
+        ],
+        locations: &["Undead Parish — Andre"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["fire weapon"],
+        missable: false,
+        rules: &[
+            "Ascend a +5 weapon to Fire (Blacksmith Vamos, Catacombs) and reinforce to Fire +10 — the +6..+10 range needs the Large Flame Ember (Demon Ruins).",
+        ],
+        locations: &["The Catacombs — Vamos"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["chaos weapon"],
+        missable: false,
+        rules: &[
+            "Ascend a Fire +5 weapon to Chaos and reinforce to Chaos +5 at Vamos — requires the Chaos Flame Ember (Demon Ruins).",
+        ],
+        locations: &["The Catacombs — Vamos"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Embers",
+            url: "http://darksouls.wikidot.com/embers",
+        }],
+    },
+    Guide {
+        appid: DS1,
+        matches: &["the dark soul"],
+        missable: false,
+        rules: &[
+            "The platinum: every other achievement. Knight's Honor (NG++ boss souls) is the long pole — plan the three-cycle weapon route from the start and keep the spell vendors alive.",
+        ],
+        locations: &["All of Lordran, chosen undead"],
+        phase: "NG++",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS1 Wikidot — Achievements",
+            url: "http://darksouls.wikidot.com/achievements",
+        }],
+    },
+    // ==================================================================
+    // DARK SOULS II (both appids) — full coverage
+    // ==================================================================
+    Guide {
+        appid: DS2,
+        matches: &["self recollection"],
+        missable: false,
+        rules: &[
+            "Reclaim your flesh in the character-creation coffin at Things Betwixt — story opening.",
+        ],
+        locations: &["Things Betwixt"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["this is dark souls"],
+        missable: false,
+        rules: &["Die once. You will."],
+        locations: &["Anywhere"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["last giant"],
+        missable: false,
+        rules: &[
+            "The first boss, below the Forest of Fallen Giants — attack the legs, run through them when he stomps, and watch the arm-club sweep in phase 2.",
+        ],
+        locations: &["Forest of Fallen Giants — The Place Unbeknownst"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — The Last Giant",
+            url: "https://darksouls2.wiki.fextralife.com/The+Last+Giant",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["covenant of the meek"],
+        missable: false,
+        rules: &["Way of Blue: talk to Crestfallen Saulden at the Majula monument and join."],
+        locations: &["Majula — the monument"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Way of Blue",
+            url: "http://darksouls2.wikidot.com/way-of-blue",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["sinner's bonfire"],
+        missable: false,
+        rules: &[
+            "Light the primal bonfire beyond the Lost Sinner in Sinner's Rise (one of the four Great Soul paths).",
+        ],
+        locations: &["Sinner's Rise — past The Lost Sinner"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — The Lost Sinner",
+            url: "https://darksouls2.wiki.fextralife.com/Lost+Sinner",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["gulch bonfire"],
+        missable: false,
+        rules: &["Light the primal bonfire past The Rotten at the bottom of the Black Gulch."],
+        locations: &["Black Gulch — past The Rotten"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — The Rotten",
+            url: "https://darksouls2.wiki.fextralife.com/The+Rotten",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["iron keep bonfire"],
+        missable: false,
+        rules: &["Light the primal bonfire past the Old Iron King in the Iron Keep."],
+        locations: &["Iron Keep — past the Old Iron King"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Old Iron King",
+            url: "https://darksouls2.wiki.fextralife.com/Old+Iron+King",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["brightstone bonfire"],
+        missable: false,
+        rules: &[
+            "Light the primal bonfire past the Duke's Dear Freja in Brightstone Cove Tseldora.",
+        ],
+        locations: &["Brightstone Cove Tseldora — past Freja"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — The Duke's Dear Freja",
+            url: "https://darksouls2.wiki.fextralife.com/The+Duke's+Dear+Freja",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["change of clothes"],
+        missable: false,
+        rules: &[
+            "Unpetrify Rosabeth of Melfia (Fragrant Branch of Yore) below the Shaded Woods gate, then give her ANY piece of armor you're willing to part with.",
+        ],
+        locations: &["Majula → Shaded Woods path — petrified Rosabeth"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["clangorous covenant"],
+        missable: false,
+        rules: &[
+            "Bell Keepers: talk to the dwarf on the Belfry Luna approach (Lost Bastille, via the Pharros contraption) and join.",
+        ],
+        locations: &["Belfry Luna — Bell Keeper dwarf"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Bell Keepers",
+            url: "http://darksouls2.wikidot.com/bell-keepers",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["gnawing covenant"],
+        missable: false,
+        rules: &[
+            "Rat King: speak to the Rat King past the Royal Rat Vanguard in the Grave of Saints (or via Doors of Pharros) and join.",
+        ],
+        locations: &["Grave of Saints / Doors of Pharros — the Rat King"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Rat King covenant",
+            url: "http://darksouls2.wikidot.com/rat-king-covenant",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["supreme weapon"],
+        missable: false,
+        rules: &[
+            "Reinforce any weapon to its maximum (+10 standard / +5 special) — needs a Titanite Slab (Petrified Dragon Bone for boss weapons). Slabs come from late-game areas, Vendrick's blessing route, and merchants in NG+.",
+        ],
+        locations: &["Blacksmith McDuff (Lost Bastille) with a Titanite Slab"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["looking glass knight"],
+        missable: false,
+        rules: &[
+            "Boss of the Drangleic Castle approach — the mirror shield summons phantoms (NPC or player); kill the summon fast or interrupt the summoning animation. Lightning-infused himself, so lightning resist helps.",
+        ],
+        locations: &["Drangleic Castle — King's Passage"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Looking Glass Knight",
+            url: "https://darksouls2.wiki.fextralife.com/Looking+Glass+Knight",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["king's ring"],
+        missable: false,
+        rules: &[
+            "Deep in the Undead Crypt: defeat Velstadt, the Royal Aegis, then take the King's Ring from the chamber beyond — it opens the three king's doors (Aldia's Keep, Forest of Fallen Giants, Shrine of Amana).",
+        ],
+        locations: &["Undead Crypt — beyond Velstadt"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Velstadt, the Royal Aegis",
+            url: "https://darksouls2.wiki.fextralife.com/Velstadt,+the+Royal+Aegis",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["ancient dragon"],
+        missable: false,
+        rules: &[
+            "Acquire the Ashen Mist Heart: with the King's Ring, ascend through Aldia's Keep to the Dragon Shrine and speak with the Ancient Dragon — it grants the heart peacefully (fighting it is optional and brutal).",
+        ],
+        locations: &["Dragon Shrine — atop Aldia's Keep"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Ancient Dragon",
+            url: "https://darksouls2.wiki.fextralife.com/Ancient+Dragon",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["covenant of the fittest"],
+        missable: false,
+        rules: &[
+            "Company of Champions: available from the very start — touch the obelisk by the Majula bonfire and join. (It hard-modes your game while active; join, pop the achievement, and leave if you like.)",
+        ],
+        locations: &["Majula — obelisk by the bonfire"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Company of Champions",
+            url: "http://darksouls2.wikidot.com/company-of-champions",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["brilliant covenant"],
+        missable: false,
+        rules: &[
+            "Heirs of the Sun: pray at the sun altar on the ledge in Harvest Valley (near the Crypt entrance area of the mines) and join. Yes — DS2's sunbro altar is easy to walk past.",
+        ],
+        locations: &["Harvest Valley — sun-marked altar"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Heirs of the Sun",
+            url: "http://darksouls2.wikidot.com/heirs-of-the-sun",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["reflections on disembodiment"],
+        missable: false,
+        rules: &[
+            "Vengarl's equipment: find his talking head in the Shaded Woods fog clearing, buy his gear, and defeat his wandering headless body (also in the Shaded Woods area) for the rest.",
+        ],
+        locations: &["Shaded Woods — head in the fog, body nearby"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["protector covenant"],
+        missable: false,
+        rules: &[
+            "Blue Sentinels: talk to Targray in the Cathedral of Blue (past the Old Dragonslayer, Heide's Tower) while holding a Token of Fidelity (earned by co-op, or found as treasure).",
+        ],
+        locations: &["Cathedral of Blue — Targray"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Blue Sentinels",
+            url: "http://darksouls2.wikidot.com/blue-sentinels",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["the heir"],
+        missable: false,
+        rules: &[
+            "See the ending: defeat Nashandra at the Throne of Want (after the Throne Watcher & Defender) and sit the throne.",
+        ],
+        locations: &["Throne of Want"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Nashandra",
+            url: "https://darksouls2.wiki.fextralife.com/Nashandra",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["vendrick"],
+        missable: false,
+        rules: &[
+            "Optional true fight with the hollow king in the Undead Crypt (enter his arena from the Velstadt side). Each Soul of a Giant you hold (from the Memories and the Black Gulch cave) cuts his absurd defense — bring at least four.",
+        ],
+        locations: &[
+            "Undead Crypt — Vendrick's chamber; Souls of Giants via the Ashen Mist memories",
+        ],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Vendrick",
+            url: "https://darksouls2.wiki.fextralife.com/Vendrick",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["sanguinary covenant"],
+        missable: false,
+        rules: &[
+            "Brotherhood of Blood: talk to Titchy Gren past the Executioner's Chariot boss (Undead Purgatory) — requires a Token of Spite in your inventory.",
+        ],
+        locations: &["Undead Purgatory — Titchy Gren"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Brotherhood of Blood",
+            url: "http://darksouls2.wikidot.com/brotherhood-of-blood",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["abysmal covenant"],
+        missable: false,
+        rules: &[
+            "Pilgrims of Dark: find Darkdiver Grandahl at any of his three spots (Shaded Ruins trapdoor, Black Gulch ledge, Drangleic Castle) — you must have met him at all three before he lets you join at the last one.",
+        ],
+        locations: &["Shaded Ruins / Black Gulch / Drangleic Castle — Grandahl"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Pilgrims of Dark",
+            url: "http://darksouls2.wikidot.com/pilgrims-of-dark",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["garrulous miser"],
+        missable: false,
+        rules: &[
+            "Laddersmith Gilligan's equipment: meet him in Earthen Peak, later he moves to Majula (pay for his ladders). Buy his wares; his armor becomes available once his story concludes — see the wiki for the fastest route.",
+        ],
+        locations: &["Earthen Peak → Majula — Gilligan"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["selfless giver"],
+        missable: false,
+        rules: &[
+            "Reach max rank (+3) in any covenant. Offline-friendliest: Company of Champions — offer 50 Awestones (farm the Executioner's Chariot area red phantoms, or Bonfire-Ascetic the Chariot for repeats).",
+        ],
+        locations: &["Any covenant — Company of Champions recommended offline"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Covenants",
+            url: "http://darksouls2.wikidot.com/covenants",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["holder of the fort"],
+        missable: false,
+        rules: &[
+            "Captain Drummond's equipment: meet him at the Forest of Fallen Giants (memory of the war via Ashen Mist Heart) and in the King's Gate area; his set unlocks for purchase/loot after his story — see the wiki route.",
+        ],
+        locations: &["Forest of Fallen Giants — Drummond (memories)"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["gathering of exiles"],
+        missable: true,
+        rules: &[
+            "Bring the wandering NPCs home to Majula: Licia (Heide's Tower — do NOT kill her, or the run is void), Carhillion (No-man's Wharf, needs 8 INT), Rosabeth (Shaded Woods gate), Gilligan (Earthen Peak), Lenigrast's key, Chloanne (Harvest Valley), and company.",
+            "Pops once enough residents have settled — talk to each NPC until their move dialogue triggers.",
+        ],
+        locations: &["Majula — as the population grows"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements (population notes)",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["covenant of ancients"],
+        missable: false,
+        rules: &[
+            "Dragon Remnants: present the Petrified Egg to Magerold of Lanafir at the Iron Keep. The egg lies in the Dragon Shrine — so this usually happens late.",
+        ],
+        locations: &["Iron Keep — Magerold, with the Petrified Egg (Dragon Shrine)"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Dragon Remnants",
+            url: "http://darksouls2.wikidot.com/dragon-remnants",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["curious map"],
+        missable: false,
+        rules: &[
+            "Light all four flames on the map inside the Majula mansion (House Key from Cale the Cartographer in the Forest of Fallen Giants). The flames light as you ignite the four primal bonfires.",
+        ],
+        locations: &["Majula mansion — basement map"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["smith for life"],
+        missable: false,
+        rules: &[
+            "Steady Hand McDuff's equipment: give him the Dull Ember (found in the Iron Keep) to open his shop in the Lost Bastille, then buy out his equipment stock.",
+        ],
+        locations: &["Lost Bastille — McDuff's workshop"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["lucatiel"],
+        missable: true,
+        rules: &[
+            "Talk to Lucatiel of Mirrah at every meeting spot (No-man's Wharf, Lost Bastille, Earthen Peak, Black Gulch...) and summon her for THREE boss fights where she survives — Flexile Sentry, the Rotten, and Freja are the usual picks.",
+            "Exhaust her dialogue each time; miss the talks and the gear won't come this cycle.",
+        ],
+        locations: &["Across Drangleic — her summon signs before select bosses"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Lucatiel of Mirrah",
+            url: "https://darksouls2.wiki.fextralife.com/Lucatiel+of+Mirrah",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["gesture maestro"],
+        missable: true,
+        rules: &[
+            "Learn all gestures — most come from NPC dialogue (Saulden, Pate, Creighton, Manscorpion Tark, the Milfanito...) so keep NPCs alive and exhaust their talks.",
+            "A couple hang off quest outcomes (e.g., Pate vs Creighton) — follow a gesture checklist per playthrough.",
+        ],
+        locations: &["NPCs across Drangleic"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Gestures",
+            url: "http://darksouls2.wikidot.com/gestures",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["moonlight greatsword"],
+        missable: true,
+        rules: &[
+            "Benhart of Jugo's equipment: exhaust his dialogue at his spots (Majula path, Shaded Woods memorial...) and summon him for three boss victories (e.g., Prowling Magnus, Looking Glass Knight, Throne duo/Giant Lord).",
+            "After the third survival, talk to him for his gear — including the Moonlight Greatsword.",
+        ],
+        locations: &["Across Drangleic — Benhart's summon signs"],
+        phase: "NG",
+        checklist: &[],
+        resources: &[Resource {
+            label: "Fextralife — Benhart of Jugo",
+            url: "https://darksouls2.wiki.fextralife.com/Benhart+of+Jugo",
+        }],
+    },
+    Guide {
+        appid: DS2,
+        matches: &["the dark soul"],
+        missable: false,
+        rules: &[
+            "The platinum: everything else. DS2 is the friendliest platinum of the trilogy thanks to Bonfire Ascetics — one thorough playthrough plus targeted ascetic burns can cover the spell masters and covenants.",
+        ],
+        locations: &["All of Drangleic, bearer of the curse"],
+        phase: "NG+",
+        checklist: &[],
+        resources: &[Resource {
+            label: "DS2 Wikidot — Achievements",
+            url: "http://darksouls2.wikidot.com/achievements",
         }],
     },
 ];
