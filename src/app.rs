@@ -83,6 +83,7 @@ enum StatusFilter {
 enum GameView {
     Achievements,
     Planner,
+    Missables,
 }
 
 #[derive(PartialEq, Clone, Copy)]
@@ -782,7 +783,7 @@ impl App {
         // split borrows against &mut self UI state.
         let view_rows: Option<Vec<AchRow>> = match self.data.get(&appid) {
             Some(Loaded::Ready(entry))
-                if self.game_view == GameView::Planner || selected.is_none() =>
+                if self.game_view != GameView::Achievements || selected.is_none() =>
             {
                 Some(entry.data.achievements.clone())
             }
@@ -799,6 +800,11 @@ impl App {
                     "\u{1F3C6} Achievements",
                 );
                 ui.selectable_value(&mut self.game_view, GameView::Planner, "\u{1F5FA} Planner");
+                ui.selectable_value(
+                    &mut self.game_view,
+                    GameView::Missables,
+                    "\u{26A0} Missables",
+                );
             });
             ui.separator();
             egui::ScrollArea::vertical()
@@ -814,6 +820,21 @@ impl App {
                                 egui::RichText::new(
                                     "Scan the game first — the planner organizes your \
                                      remaining achievements by playthrough.",
+                                )
+                                .color(DIM),
+                            );
+                        }
+                    },
+                    GameView::Missables => match &view_rows {
+                        Some(rows) => {
+                            nav_clicked = missables_view(ui, game, rows);
+                        }
+                        None => {
+                            ui.add_space(16.0);
+                            ui.label(
+                                egui::RichText::new(
+                                    "Scan the game first — this view lists everything you \
+                                     can permanently miss this playthrough.",
                                 )
                                 .color(DIM),
                             );
@@ -846,6 +867,75 @@ impl App {
             self.game_view = GameView::Achievements;
         }
     }
+}
+
+/// Everything permanently lockable this playthrough, deadlines up front.
+/// Returns a clicked achievement.
+fn missables_view(ui: &mut egui::Ui, game: &games::Game, rows: &[AchRow]) -> Option<String> {
+    let mut clicked = None;
+
+    let mut missables: Vec<(&AchRow, &'static guides::Guide)> = rows
+        .iter()
+        .filter_map(|r| {
+            guides::find(game.appid, &r.name)
+                .filter(|g| g.missable)
+                .map(|g| (r, g))
+        })
+        .collect();
+    // Locked (still at risk) first, then secured.
+    missables.sort_by_key(|(r, _)| r.unlocked == Some(true));
+    let at_risk = missables
+        .iter()
+        .filter(|(r, _)| r.unlocked != Some(true))
+        .count();
+
+    ui.add_space(8.0);
+    ui.label(theme::display(format!("{} — Missables", game.title), 22.0));
+    if missables.is_empty() {
+        ui.label(
+            egui::RichText::new("Nothing here can be permanently missed. Play on.").color(DIM),
+        );
+        return None;
+    }
+    ui.label(
+        egui::RichText::new(format!(
+            "{at_risk} still at risk this playthrough. Check this screen before every major boss."
+        ))
+        .small()
+        .color(if at_risk > 0 { ORANGE } else { GREEN }),
+    );
+    ui.add_space(6.0);
+    ui.separator();
+
+    for (row, guide) in missables {
+        let unlocked = row.unlocked == Some(true);
+        ui.add_space(6.0);
+        ui.horizontal(|ui| {
+            ui.label(if unlocked {
+                egui::RichText::new("\u{2714}").color(GREEN)
+            } else {
+                egui::RichText::new("\u{26A0}").color(ORANGE)
+            });
+            let name = if unlocked {
+                egui::RichText::new(&row.name).strikethrough().color(DIM)
+            } else {
+                egui::RichText::new(&row.name).strong()
+            };
+            if ui.link(name).clicked() {
+                clicked = Some(row.api_name.clone());
+            }
+            if let Some(p) = row.percent {
+                ui.label(egui::RichText::new(format!("{p:.1}%")).small().color(DIM));
+            }
+        });
+        if !guide.deadline.is_empty() && !unlocked {
+            ui.horizontal(|ui| {
+                ui.add_space(24.0);
+                ui.label(egui::RichText::new(guide.deadline).color(ORANGE).italics());
+            });
+        }
+    }
+    clicked
 }
 
 /// Phase-grouped roadmap for one game. Returns a clicked achievement.
@@ -1630,6 +1720,28 @@ fn game_notes_and_resources(ui: &mut egui::Ui, game: &games::Game) {
         }
         ui.add_space(8.0);
     }
+    if !game.mechanics.is_empty() {
+        ui.label(
+            egui::RichText::new("\u{1F9ED} Mechanics primer")
+                .strong()
+                .color(BLUE),
+        );
+        for m in game.mechanics {
+            bullet(ui, m);
+        }
+        ui.add_space(8.0);
+    }
+    if !game.farming.is_empty() {
+        ui.label(
+            egui::RichText::new("\u{1F33E} Farming spots")
+                .strong()
+                .color(GREEN),
+        );
+        for f in game.farming {
+            bullet(ui, f);
+        }
+        ui.add_space(8.0);
+    }
     ui.label(egui::RichText::new("\u{1F4D6} Best overall resources").strong());
     for r in game.resources {
         ui.horizontal(|ui| {
@@ -2099,6 +2211,41 @@ mod tests {
                     "no curated guide for {appid} / {name}"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn every_missable_has_a_deadline() {
+        for g in crate::guides::all_guides() {
+            if g.missable {
+                assert!(
+                    !g.deadline.is_empty(),
+                    "missable guide {:?} has no deadline",
+                    g.matches
+                );
+            } else {
+                assert!(
+                    g.deadline.is_empty(),
+                    "non-missable guide {:?} has a deadline",
+                    g.matches
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn every_game_has_primers() {
+        for game in crate::games::GAMES {
+            assert!(
+                !game.mechanics.is_empty(),
+                "{} missing mechanics primer",
+                game.title
+            );
+            assert!(
+                !game.farming.is_empty(),
+                "{} missing farming primer",
+                game.title
+            );
         }
     }
 

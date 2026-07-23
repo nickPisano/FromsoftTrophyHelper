@@ -19,6 +19,9 @@ pub struct Guide {
     pub matches: &'static [&'static str],
     /// True when the achievement can be lost for the current playthrough.
     pub missable: bool,
+    /// One-line point of no return, shown in the Missables view.
+    /// Empty for non-missable entries.
+    pub deadline: &'static str,
     /// Hard rules: points of no return, lockouts, prerequisites.
     pub rules: &'static [&'static str],
     /// Places you'll need to be.
@@ -75,6 +78,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["age of the stars"],
         missable: true,
+        deadline: "Finish Ranni's questline before the final boss — and don't stay committed to the Frenzied Flame",
         rules: &[
             "Requires completing Ranni's entire questline before the final boss — start it early at Ranni's Rise in the Three Sisters (northwest Liurnia).",
             "Do NOT kill Ranni, and do not accept the Frenzied Flame (or cure it with Miquella's Needle) before choosing this ending.",
@@ -119,6 +123,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["frenzied flame"],
         missable: true,
+        deadline: "Accepting the Flame locks every other ending until cured with Miquella's Needle — back up your save first",
         rules: &[
             "WARNING: receiving the Frenzied Flame from the Three Fingers locks you into this ending and voids every other ending for the run — unless you cure it.",
             "The only cure is Miquella's Needle: complete Millicent's questline, then use the needle inside Dragonlord Placidusax's arena in Crumbling Farum Azula.",
@@ -155,6 +160,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["elden lord"],
         missable: false,
+        deadline: "",
         rules: &[
             "The 'default' ending family: after the final boss, touch Fractured Marika (any Mending Rune variant also counts as Elden Lord).",
             "Only blocked if you're locked into the Frenzied Flame — cure it with Miquella's Needle or avoid the Three Fingers entirely.",
@@ -171,6 +177,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["legendary armaments"],
         missable: true,
+        deadline: "Grab the Bolt of Gransax in Leyndell BEFORE defeating Maliketh",
         rules: &[
             "Nine weapons total. Only one is truly missable in a playthrough: Bolt of Gransax — pick it up in Leyndell, Royal Capital BEFORE defeating Maliketh. Once the city becomes the Ashen Capital it's gone for the cycle.",
             "Dark Moon Greatsword requires progressing Ranni's questline to its end.",
@@ -213,6 +220,7 @@ static GUIDES: &[Guide] = &[
             "legendary sorceries and incantations",
         ],
         missable: true,
+        deadline: "Don't kill Sellen before getting Stars of Ruin; Ranni's quest gates Ranni's Dark Moon",
         rules: &[
             "Seven spells. Two hang off questlines: Ranni's Dark Moon (complete puzzle tower Chelona's Rise, reachable via Ranni's questline area) and Stars of Ruin (from Master Lusat — requires Sellen's quest item, the Sellian Sealbreaker).",
             "Don't kill Sorceress Sellen before getting Stars of Ruin.",
@@ -252,6 +260,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["legendary talismans"],
         missable: false,
+        deadline: "",
         rules: &[
             "Eight talismans, none missable, but two sit deep inside Miquella's Haligtree — you'll need both halves of the Haligtree Secret Medallion (Village of the Albinaurics + Castle Sol) to get there.",
             "Erdtree's Favor +2 only exists in Leyndell, Ashen Capital, i.e. after Maliketh — it's late, not missable.",
@@ -286,6 +295,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["legendary ashen remains"],
         missable: false,
+        deadline: "",
         rules: &[
             "Six legendary spirit ashes. Black Knife Tiche requires progressing Ranni's questline far enough to reach the Moonlight Altar and beating Alecto in the Ringleader's Evergaol.",
             "Mimic Tear is in Nokron — reachable only after Starscourge Radahn falls.",
@@ -316,6 +326,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["shardbearer mohg", "mohg, lord of blood"],
         missable: false,
+        deadline: "",
         rules: &[
             "Reach Mohgwyn Palace either by completing White Mask Varre's questline (his invasion steps can be done offline against an NPC) or via the waygate portal in the far west of the Consecrated Snowfield.",
         ],
@@ -351,6 +362,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["shardbearer malenia", "malenia"],
         missable: false,
+        deadline: "",
         rules: &[
             "Miquella's Haligtree is a secret area: collect both halves of the Haligtree Secret Medallion, then solve the Ordina, Liturgical Town evergaol seal in the Consecrated Snowfield.",
             "Malenia heals on every hit that connects with you — bring bleed/frost and consider Mimic Tear or co-op.",
@@ -383,6 +395,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["usurpation of fire"],
         missable: true,
+        deadline: "Voided the instant you heal the Dark Sigil — and Yoel must give all 5 levels before he dies",
         rules: &[
             "The strictest questline in the game. Draw out your true strength with Yoel of Londor FIVE times (level ups are free) to gain five Dark Sigils — Yoel dies after enough game progress, so do it early.",
             "NEVER heal the Dark Sigil with the Fire Keeper — that voids the ending for the playthrough.",
@@ -426,6 +439,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["end of fire"],
         missable: true,
+        deadline: "Collect the Eyes of a Fire Keeper before the final boss, then summon — don't light the bonfire",
         rules: &[
             "Find the Eyes of a Fire Keeper in Untended Graves (the dark Firelink behind Oceiros) and give them to the Fire Keeper before the final boss.",
             "At the Kiln, summon the Fire Keeper with the sign after beating the Soul of Cinder — don't touch the bonfire first.",
@@ -461,6 +475,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["master of rings"],
         missable: false,
+        deadline: "",
         rules: &[
             "The big one: every ring, including +1 versions (NG+ only) and +2 versions (NG++ only) — plan your three playthroughs around it.",
             "A handful come from questlines and covenants (e.g., Darkmoon Ring from Blades of the Darkmoon rank; some from Leonhard/Rosaria's chain), so keep NPC quests alive as you go.",
@@ -480,6 +495,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["master of miracles"],
         missable: true,
+        deadline: "Keep Irina and Karla alive (and quest-safe) until every miracle is bought",
         rules: &[
             "35 miracles — DLC miracles (Way of White Corona, Projected Heal, Lightning Arrow) do NOT count.",
             "Buy out Irina's stock from every Braille Divine Tome, and keep her questline on the 'good' path (don't feed her the dark tomes — give those to Karla; the spells count from either teacher).",
@@ -547,6 +563,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["master of sorceries"],
         missable: true,
+        deadline: "Give Orbeck a scroll early or he leaves Firelink for good",
         rules: &[
             "34 sorceries — DLC sorceries (Frozen Weapon, Snap Freeze, Great Soul Dregs, Old Moonlight) do NOT count.",
             "Orbeck of Vinheim must survive the whole quest: give him at least one scroll early or he leaves Firelink for good. Bring him all four scrolls (Sage's, Golden, Logan's, Crystal) and buy everything.",
@@ -618,6 +635,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["master of pyromancies"],
         missable: true,
+        deadline: "Keep Cornyx and Karla alive until every pyromancy is bought",
         rules: &[
             "27 pyromancies — DLC pyromancies (Flame Fan, Floating Chaos, Seething Chaos) do NOT count.",
             "Tomes split between two teachers: Cornyx takes Great Swamp, Carthus, and Izalith; only Karla accepts the Quelana and Grave Warden tomes. Keep both alive until you've bought everything.",
@@ -675,6 +693,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["ultimate estus", "ultimate bonfire"],
         missable: false,
+        deadline: "",
         rules: &[
             "Collect all 11 Estus Shards (max flask) or all 10 Undead Bone Shards (max bonfire). None are missable — just well hidden.",
         ],
@@ -701,6 +720,7 @@ static GUIDES: &[Guide] = &[
         appid: SEKIRO,
         matches: &["shura"],
         missable: true,
+        deadline: "Choosing 'Obey the Iron Code' ends this run — the other three endings need another playthrough",
         rules: &[
             "On the Ashina Castle rooftop (after the Divine Dragon prerequisites mid-game), choose to OBEY the Iron Code with Owl. This ends the game early with two exclusive boss fights.",
             "This choice locks out the other three endings for the playthrough — most players do Shura as a short second run (it's only a few hours with routing) or back up the save before the choice.",
@@ -717,6 +737,7 @@ static GUIDES: &[Guide] = &[
         appid: SEKIRO,
         matches: &["purification"],
         missable: true,
+        deadline: "Complete every eavesdrop step before progressing past the Ashina Castle invasion",
         rules: &[
             "Strict hidden steps: after refusing Owl, eavesdrop on Kuro and Emma (multiple specific eavesdrops at Kuro's room / the Old Grave), talk to Emma repeatedly, and receive the Father's Bell Charm.",
             "Use the bell charm at the Hirata Estate to enter the SECOND Hirata memory and defeat Owl (Father).",
@@ -745,6 +766,7 @@ static GUIDES: &[Guide] = &[
         appid: SEKIRO,
         matches: &["dragon's homecoming", "homecoming"],
         missable: true,
+        deadline: "Finish the Divine Child's rice and serpent-viscera steps before the final choice",
         rules: &[
             "Requires the Divine Child questline: give her rice repeatedly, get the Holy Chapter: Infested, then bring her both Serpent Viscera (Fresh — the Great Serpent's shrine cave in Sunken Valley; Dried — the second serpent reached via the Senpou Temple kite puzzle) to receive the Frozen Tears.",
             "Choose 'Return' at the final decision while holding the Frozen Tears.",
@@ -773,6 +795,7 @@ static GUIDES: &[Guide] = &[
         appid: SEKIRO,
         matches: &["man without equal"],
         missable: true,
+        deadline: "Needs the Shura-exclusive bosses too — plan a second run or a save backup",
         rules: &[
             "Defeat every boss in the game — including the Shura-route exclusives (Emma & Isshin Ashina) AND the normal-route finale (Isshin, the Sword Saint / Divine Dragon). Impossible in one run without a save backup: plan two playthroughs minimum.",
             "Includes all optional bosses: Demon of Hatred, Great Shinobi Owl, Owl (Father), Headless Ape rematch, and both Hirata memories.",
@@ -789,6 +812,7 @@ static GUIDES: &[Guide] = &[
         appid: SEKIRO,
         matches: &["height of technique", "all skills"],
         missable: false,
+        deadline: "",
         rules: &[
             "You need every esoteric text (some are quest-gated — e.g., complete Tengu's rat-hunt for the Ashina text; late-game texts come from endgame areas and NPC steps) and a mountain of skill points.",
             "Expect to farm or carry into NG+ — total XP needed far exceeds one playthrough.",
@@ -808,6 +832,7 @@ static GUIDES: &[Guide] = &[
         appid: SEKIRO,
         matches: &["prosthetic"],
         missable: false,
+        deadline: "",
         rules: &[
             "Fully upgrading every prosthetic tool needs rare materials — most notably Lapis Lazuli, which only appears in the Fountainhead Palace and NG+ sources. Plan on more than one playthrough's worth of materials.",
             "Find all 10 base prosthetic tools first (a couple are easy to walk past — e.g., the Sabimaru and the Finger Whistle).",
@@ -830,6 +855,7 @@ static GUIDES: &[Guide] = &[
         appid: AC6,
         matches: &["fires of raven"],
         missable: true,
+        deadline: "Mutually exclusive with Liberator of Rubicon — decided at the branch missions",
         rules: &[
             "One of two endings available in your first/second playthrough. Ending choice is driven by which decision missions you accept in the final chapters (side with Carla / burn Rubicon).",
             "You can replay via NG+ to pick the other branch — decision missions are clearly marked with mutually exclusive choices.",
@@ -846,6 +872,7 @@ static GUIDES: &[Guide] = &[
         appid: AC6,
         matches: &["liberator of rubicon"],
         missable: true,
+        deadline: "Mutually exclusive with Fires of Raven — decided at the branch missions",
         rules: &[
             "The counterpart branch to Fires of Raven — side with Ayre when the decision missions split. Take whichever you skipped on your other run via NG+.",
         ],
@@ -861,6 +888,7 @@ static GUIDES: &[Guide] = &[
         appid: AC6,
         matches: &["alea iacta est"],
         missable: false,
+        deadline: "",
         rules: &[
             "The true ending — ONLY available in NG++ (third playthrough). New exclusive decision missions appear across the campaign; complete the new branch to unlock the final route.",
             "You must make the specific new-mission choices in NG++ — follow a mission-order guide so you don't have to run a fourth lap.",
@@ -883,6 +911,7 @@ static GUIDES: &[Guide] = &[
         appid: AC6,
         matches: &["asset holder"],
         missable: false,
+        deadline: "",
         rules: &[
             "Own every part. Several parts come only from: NG+/NG++ exclusive missions, hidden part containers inside missions, and Arena completion — sweep the Arena every chapter.",
             "Money is the real constraint late — replay high-payout missions to afford the last purchases.",
@@ -901,6 +930,7 @@ static GUIDES: &[Guide] = &[
         appid: AC6,
         matches: &["combat log", "battle log", "loghunt"],
         missable: false,
+        deadline: "",
         rules: &[
             "Combat logs drop from specific marked enemies inside missions — many only exist in NG+ / NG++ mission variants, so log hunting spans all three playthroughs.",
             "Use the Loghunt list from the ALLMIND terminal to track tiers; replaying a mission lets you re-grab any log you missed.",
@@ -920,6 +950,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["knight's honor"],
         missable: true,
+        deadline: "Cut all five tails on first meeting; never consume a needed boss soul",
         rules: &[
             "Collect all 47 rare weapons on ONE character — the true long-haul achievement. Several boss souls forge MULTIPLE weapons (Sif's makes three, Quelaag's, the Butterfly's, the Golem's and Gwyndolin's make two each), so a solo run needs souls from NG+ and NG++ — or have another player drop weapons/souls for you (trades count).",
             "DLC weapons do NOT count: Obsidian Greatsword, Guardian Tail, Gough's Greatbow etc. are not needed. Neither are the Gargoyle Tail Axe, Crystal Halberd, or other rare-but-not-required drops.",
@@ -996,6 +1027,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["dark wraith", "darkwraith"],
         missable: true,
+        deadline: "The Four Kings must fall BEFORE the Lordvessel is placed with Frampt",
         rules: &[
             "You must reach Darkstalker Kaathe in the Abyss: defeat the Four Kings BEFORE placing the Lordvessel for Frampt. If you've already placed it via Frampt, Kaathe won't appear this playthrough.",
             "Four Kings before Lordvessel means fighting them without the usual endgame power — level up and bring Havel's/stamina gear.",
@@ -1022,6 +1054,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["wisdom of a sage"],
         missable: true,
+        deadline: "Free Logan twice and buy his stock before killing Seath",
         rules: &[
             "24 sorceries, all on one character. DLC sorceries (Dark Bead, Dark Orb, Dark Fog, Pursuers) do NOT count.",
             "Big Hat Logan's questline is the trap: free him in Sen's Fortress (cell key on the upper walkway), buy his stock at Firelink, free him AGAIN in the Duke's Archives, buy the rest — then after he goes hollow, defeat him for White Dragon Breath.",
@@ -1080,6 +1113,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["bond of a pyromancer"],
         missable: true,
+        deadline: "Keep Laurentius sane (never mention Quelana's swamp) and buy vendors out",
         rules: &[
             "19 pyromancies, all on one character. The DLC's Black Flame does NOT count.",
             "Rescue Laurentius in the Depths (roll into the barrel — don't hit it); later, if he asks about your pyromancy, DON'T tell him where you learned advanced flames or he leaves and hollows.",
@@ -1128,6 +1162,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["prayer of a maiden"],
         missable: true,
+        deadline: "Buy all of Reah's miracles before she moves to the Archives",
         rules: &[
             "All 23 miracles. Unusually, this one is cumulative across characters — spells collected on different characters all count.",
             "Reah of Thorolund's questline is still the trap: rescue her party in the Tomb of the Giants, then buy ALL her miracles at the Undead Parish before she moves to the Duke's Archives (where she can die).",
@@ -1181,6 +1216,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["master of sorcery"],
         missable: false,
+        deadline: "",
         rules: &[
             "Several sorceries are forged from boss souls by Straid or Ornifex — beating some bosses more than once is required. Burn Bonfire Ascetics to respawn a boss instead of waiting for NG+.",
             "Buy out every sorcery vendor (Carhillion, Magerold, Straid) and check covenant rewards.",
@@ -1201,6 +1237,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["master of miracles"],
         missable: false,
+        deadline: "",
         rules: &[
             "Includes covenant rewards — notably the Heirs of the Sun rank reward (Sunlight Medals: earn via co-op, or farm medal drops offline with Bonfire Ascetics) and boss-soul miracles from Straid/Ornifex.",
             "Licia of Lindeldt sells the bulk — buy her out early.",
@@ -1221,6 +1258,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["master of pyromancy"],
         missable: false,
+        deadline: "",
         rules: &[
             "Buy out Rosabeth of Melfia (unpetrify her with a Fragrant Branch of Yore below Majula's Shaded Woods gate) and collect world pickups; a couple come from boss souls and covenant ranks.",
         ],
@@ -1239,6 +1277,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["master of hexes"],
         missable: false,
+        deadline: "",
         rules: &[
             "Requires the Pilgrims of Dark covenant: find Darkdiver Grandahl in all THREE locations, clear the three Dark Chasm of Old dungeons (Human Effigy toll each), and defeat the Darklurker for the final hex.",
             "Felkin the Outcast only sells hexes once you have 20 Intelligence and 20 Faith — talk to him again at those stats. Boss-soul hexes come via Straid/Ornifex.",
@@ -1281,6 +1320,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["shardbearer godrick", "godrick"],
         missable: false,
+        deadline: "",
         rules: &[
             "The first mandatory shardbearer. If he's a wall, explore Limgrave and the Weeping Peninsula first — levels and Ashes of War carry this fight.",
         ],
@@ -1296,6 +1336,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["shardbearer radahn", "radahn"],
         missable: false,
+        deadline: "",
         rules: &[
             "Fought at the Radahn Festival at Redmane Castle: reach the castle via the bridge in far south Caelid, or the teleporter at Impassable Greatbridge. The festival activates once you arrive (or after touching an Altus grace).",
             "Summon signs litter the whole arena — this fight is designed around re-summoning NPC allies. Torrent is allowed.",
@@ -1313,6 +1354,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["shardbearer rykard", "rykard"],
         missable: false,
+        deadline: "",
         rules: &[
             "Reach him through Volcano Manor: either complete the Manor's assassination questline (Tanith's contracts — also unlocks other rewards) or get grabbed by the Abductor Virgin at the bottom of Raya Lucaria's waterwheel.",
             "Pick up the Serpent-Hunter greatspear ON the arena floor — the fight is balanced around it.",
@@ -1329,6 +1371,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["shardbearer morgott", "morgott"],
         missable: false,
+        deadline: "",
         rules: &[
             "Entering Leyndell requires holding two Great Runes. Morgott waits at the base of the Erdtree.",
             "While you're in Leyndell: grab the Bolt of Gransax now if you're chasing Legendary Armaments — the window closes after Maliketh.",
@@ -1345,6 +1388,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["great rune"],
         missable: false,
+        deadline: "",
         rules: &[
             "Restore any shardbearer's Great Rune at its Divine Tower (each boss has its own tower — e.g. Godrick's is across the bridge east of Stormveil), then equip it at a site of grace and activate it with a Rune Arc.",
         ],
@@ -1363,6 +1407,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["blade of the darkmoon"],
         missable: true,
+        deadline: "Join before harming Gwyndolin",
         rules: &[
             "Join in the Darkmoon Tomb: from the Anor Londo bonfire room, the rotating staircase leads DOWN to a sealed door — equip the Darkmoon Seance Ring (Catacombs illusory wall) to open it, then pray at the covenant sign.",
             "Do NOT kill Gwyndolin before joining — that locks the covenant for the playthrough.",
@@ -1382,6 +1427,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["path of the dragon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Join by approaching the Everlasting Dragon at the end of Ash Lake — a long optional trek: Blighttown swamp → Great Hollow (hidden behind illusory walls in a chest room) → Ash Lake.",
             "Don't attack the Stone Dragon; it's the covenant leader.",
@@ -1398,6 +1444,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["forest hunter"],
         missable: true,
+        deadline: "Never attack Alvina or the forest guardians before joining",
         rules: &[
             "Join by speaking to Alvina (the giant cat) in Darkroot Garden — behind the door sealed by the Crest of Artorias (20,000 souls from Andre of Astora).",
             "Attacking the forest NPCs or Alvina before joining can void the covenant — talk first, fight never.",
@@ -1417,6 +1464,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["chaos servant"],
         missable: false,
+        deadline: "",
         rules: &[
             "Join through the illusory wall behind Quelaag's Domain (talk to Eingyi, answer 'yes'): the Fair Lady (Quelaag's sister) accepts humanity offerings.",
             "Offering 30 humanity opens the Lost Izalith shortcut — which is also how you save Solaire from the Sunlight Maggot if you care about his questline.",
@@ -1433,6 +1481,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["gravelord"],
         missable: false,
+        deadline: "",
         rules: &[
             "Join by lying in the empty coffin in the Catacombs (near the second bonfire, behind the wheel skeletons) while holding at least one Eye of Death — Nito inducts you.",
             "You need an Eye of Death first: three sit in a Catacombs corpse pile near the Titanite Demon.",
@@ -1449,6 +1498,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["princess"],
         missable: true,
+        deadline: "Join before harming Gwynevere",
         rules: &[
             "Join by speaking to Gwynevere in Anor Londo after defeating Ornstein & Smough.",
             "Killing Gwynevere (which darkens Anor Londo permanently) locks the covenant for the playthrough — join before any dark deeds.",
@@ -1465,6 +1515,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["warrior of sunlight"],
         missable: false,
+        deadline: "",
         rules: &[
             "Pray at the Sunlight Altar (broken statue on the bridge below the Hellkite Drake, Undead Parish side) with 25 Faith — the requirement drops by 5 for each co-op session you've completed as a summon.",
         ],
@@ -1483,6 +1534,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["covenant: blade of the darkmoon", "blades of the darkmoon"],
         missable: true,
+        deadline: "Don't attack or kill Yorshka",
         rules: &[
             "Join via Yorshka, hidden above Anor Londo: from the top of the rotating tower mechanism, walk the INVISIBLE bridge from the broken walkway toward the prison tower.",
             "Don't attack or kill Yorshka — that locks the covenant for the playthrough.",
@@ -1499,6 +1551,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["aldrich faithful"],
         missable: false,
+        deadline: "",
         rules: &[
             "Join via Archdeacon McDonnell, behind an illusory wall in Irithyll's Water Reserve: after Pontiff Sulyvahn, take the stairs down near the two Sulyvahn beasts — the wall is at the back of the room.",
         ],
@@ -1514,6 +1567,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["mound-makers", "mound makers"],
         missable: true,
+        deadline: "Join before the Curse-Rotted Greatwood dies (afterwards only via Sirris' quest)",
         rules: &[
             "Easiest join: BEFORE defeating the Curse-Rotted Greatwood, find Hodrick in the spiked cage carried by the hollow manservant northwest of the Undead Settlement's central square — climb in.",
             "If the Greatwood is already dead, the only remaining path is through Sirris' questline (answer her summons at Keep Ruins) — slower and easy to break.",
@@ -1530,6 +1584,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["rosaria's fingers"],
         missable: true,
+        deadline: "Join before finishing Leonhard's questline",
         rules: &[
             "Join at Rosaria's Bed Chamber in the Cathedral of the Deep (past the giant slugs, up from the Deacons area).",
             "Quest-conflict warning: offering Pale Tongues fails Sirris' questline. Joining alone is safe — you can join, get the achievement, and never rank up.",
@@ -1550,6 +1605,7 @@ static GUIDES: &[Guide] = &[
         appid: SEKIRO,
         matches: &["peak physical strength"],
         missable: false,
+        deadline: "",
         rules: &[
             "Max Vitality and Posture = all 40 Prayer Beads (10 necklaces). Most come from minibosses — many optional and easy to walk past — plus a few purchases and pickups.",
             "Miss any and they carry over: NG+ repeats bead sources, so nothing is permanently lost, but a per-area checklist saves you a full extra playthrough.",
@@ -1569,6 +1625,7 @@ static GUIDES: &[Guide] = &[
         appid: AC6,
         matches: &["arena"],
         missable: false,
+        deadline: "",
         rules: &[
             "New Arena entrants unlock as the story progresses — and more appear in NG+ and NG++. Sweep the Arena tab every chapter; completion also feeds OS Tuning chips and parts money.",
         ],
@@ -1584,6 +1641,7 @@ static GUIDES: &[Guide] = &[
         appid: AC6,
         matches: &["data log"],
         missable: false,
+        deadline: "",
         rules: &[
             "Data logs hide inside mission maps (often off the objective path) and some only exist in NG+/NG++ mission variants. Replay missions freely — collection is cumulative.",
         ],
@@ -1602,6 +1660,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["roundtable hold"],
         missable: false,
+        deadline: "",
         rules: &[
             "Granted for reaching the Roundtable Hold: keep resting at sites of grace and talking to Melina — she extends the invitation early in Limgrave (guaranteed around the time you fight Margit).",
         ],
@@ -1617,6 +1676,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["margit, the fell omen"],
         missable: false,
+        deadline: "",
         rules: &[
             "The first wall. If he's too much, level in Limgrave first, grab Margit's Shackle from Patches' area (pins him twice), and use the Stormveil summon signs by the fog gate.",
         ],
@@ -1632,6 +1692,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["red wolf of radagon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Mid-legacy boss of Raya Lucaria Academy (needs the Academy Glintstone Key from behind the sleeping dragon west of the academy).",
         ],
@@ -1647,6 +1708,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["rennala, queen of the full moon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Raya Lucaria's legacy boss. Phase 1: break the singing children's barrier by killing the glowing pupil three times. Phase 2 is a proper duel — her spells punish greed but she has low poise.",
             "Defeating her also unlocks respeccing (Larval Tears).",
@@ -1663,6 +1725,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["leonine misbegotten"],
         missable: false,
+        deadline: "",
         rules: &[
             "Castle Morne's boss at the southern tip of the Weeping Peninsula — also the end of Irina and Edgar's questline, and drops the Grafted Blade Greatsword (a Legendary Armament).",
         ],
@@ -1678,6 +1741,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["royal knight loretta"],
         missable: false,
+        deadline: "",
         rules: &[
             "Guards Caria Manor's inner grounds in northwest Liurnia — beating her opens the Three Sisters area (Ranni's questline) and drops Loretta's Greatbow.",
         ],
@@ -1693,6 +1757,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["mimic tear"],
         missable: false,
+        deadline: "",
         rules: &[
             "The boss copies your current loadout — a classic trick is to unequip everything (or switch to weak gear) before the fog wall, then re-equip once it has copied you.",
         ],
@@ -1708,6 +1773,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["godfrey, first elden lord"],
         missable: false,
+        deadline: "",
         rules: &[
             "The golden-shade version in Leyndell, Royal Capital — a mandatory story boss on the way to Morgott. (His true fight comes later as Hoarah Loux.)",
         ],
@@ -1723,6 +1789,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["magma wyrm makar"],
         missable: false,
+        deadline: "",
         rules: &[
             "Boss of the Ruin-Strewn Precipice — the alternative (no-Great-Runes) route from Liurnia up to the Altus Plateau. Optional if you use the Grand Lift of Dectus instead.",
         ],
@@ -1738,6 +1805,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["god-slaying armament"],
         missable: false,
+        deadline: "",
         rules: &[
             "Upgrade any armament to its highest stage: +25 (standard, needs an Ancient Dragon Smithing Stone) or +10 (somber, needs a Somber Ancient Dragon Smithing Stone). The ancient stones are rare finite finds in late areas — Farum Azula, Mountaintops, and quest rewards.",
         ],
@@ -1753,6 +1821,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["fire giant"],
         missable: false,
+        deadline: "",
         rules: &[
             "Mandatory boss at the Flame Peak, Mountaintops of the Giants. Torrent is allowed — stay at his heels; in phase 2 target the flaming eye. Ranged builds trivialize phase 1 by sniping the leg brace.",
         ],
@@ -1768,6 +1837,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["erdtree aflame"],
         missable: false,
+        deadline: "",
         rules: &[
             "Story flag: after the Fire Giant, commit the cardinal sin at the Forge of the Giants.",
             "POINT OF NO RETURN warning: this eventually leads to Leyndell becoming the Ashen Capital (after Maliketh). Grab the Bolt of Gransax and finish Leyndell business first if you're chasing Legendary Armaments.",
@@ -1784,6 +1854,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["commander niall"],
         missable: false,
+        deadline: "",
         rules: &[
             "Castle Sol's boss (Mountaintops). Kill his two summoned knights first — Bewitching Branches charm them to your side. Drops the left half of the Haligtree Secret Medallion.",
         ],
@@ -1799,6 +1870,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["astel, naturalborn of the void"],
         missable: false,
+        deadline: "",
         rules: &[
             "Fought at the Grand Cloister past the Lake of Rot during Ranni's questline. Beware the grab (teleport behind you) and the meteor volley — stay mid-range and punish after its laser.",
         ],
@@ -1814,6 +1886,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["godskin duo"],
         missable: false,
+        deadline: "",
         rules: &[
             "Crumbling Farum Azula's gank fight — the pair shares one health bar. Sleep is the famous cheese: Sleep Pots or St. Trina's Torch shut one down while you kill the other. The pillars are your friends.",
         ],
@@ -1829,6 +1902,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["godskin noble"],
         missable: false,
+        deadline: "",
         rules: &[
             "The rolling one. Fought at the Temple of Eiglay in Volcano Manor (mandatory for the Rykard route). His flame attacks are slow — stay close to his left leg.",
         ],
@@ -1844,6 +1918,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["ancestor spirit"],
         missable: false,
+        deadline: "",
         rules: &[
             "Summoned by lighting the eight flame obelisks around the dead deer in Siofra River, then interacting with the altar. Entirely optional and easy to miss — the underground is worth the trip.",
         ],
@@ -1859,6 +1934,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["regal ancestor spirit"],
         missable: false,
+        deadline: "",
         rules: &[
             "The stronger version in Nokron: light the flame obelisks around the Ancestral Woods (one requires a rooftop drop route), then touch the deer skeleton. Heals itself — burst it down.",
         ],
@@ -1874,6 +1950,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["maliketh the black blade"],
         missable: false,
+        deadline: "",
         rules: &[
             "Farum Azula's final boss. His Destined Death attacks reduce max HP — the Blasphemous Claw (from Knight Bernahl's invasion) parries his black-blade moves in phase 2.",
             "WARNING: defeating him turns Leyndell into the Ashen Capital. Grab the Bolt of Gransax and any Leyndell business FIRST.",
@@ -1890,6 +1967,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["hoarah loux, warrior"],
         missable: false,
+        deadline: "",
         rules: &[
             "Godfrey's true form in the Ashen Capital, right before the final boss. His grabs do enormous damage — jump his ground slams and keep stamina in reserve for the wrestling combos.",
         ],
@@ -1905,6 +1983,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["valiant gargoyles"],
         missable: false,
+        deadline: "",
         rules: &[
             "Duo fight at the Siofra Aqueduct (deep Nokron) — their poison breath stacks fast. Beating them opens the coffin ride to the Deeproot Depths.",
         ],
@@ -1920,6 +1999,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["loretta, knight of the haligtree"],
         missable: false,
+        deadline: "",
         rules: &[
             "The real Loretta guarding Elphael's entrance in Miquella's Haligtree (secret area — see Shardbearer Malenia for the route).",
         ],
@@ -1935,6 +2015,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["elemer of the briar"],
         missable: false,
+        deadline: "",
         rules: &[
             "Boss of The Shaded Castle in the poison marsh between Altus and Mt. Gelmir. Drops the Marais Executioner's Sword (a Legendary Armament).",
         ],
@@ -1950,6 +2031,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["dragonkin soldier of nokstella"],
         missable: false,
+        deadline: "",
         rules: &[
             "Found in the Ainsel River underground (reachable via the Ainsel River Well in Liurnia — no questline required). Lightning resistance helps.",
         ],
@@ -1965,6 +2047,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["mohg, the omen"],
         missable: false,
+        deadline: "",
         rules: &[
             "The Shunning-Grounds version of Mohg beneath Leyndell (not the shardbearer). Behind his arena lies the hidden route to the Frenzied Flame — strike the altar after the fight.",
         ],
@@ -1980,6 +2063,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["dragonlord placidusax"],
         missable: false,
+        deadline: "",
         rules: &[
             "Secret boss of Farum Azula: from the Beside the Great Bridge grace, drop to the ledge outside and 'lie down' at the marked spot at the arena's edge to be carried to him.",
             "This arena is also the only place Miquella's Needle can be used to cure the Frenzied Flame.",
@@ -1996,6 +2080,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["lichdragon fortissax"],
         missable: true,
+        deadline: "Only reachable through Fia's questline — keep her alive and finish before the final boss",
         rules: &[
             "Locked behind Fia's questline: progress her talks at the Roundtable/Deeproot Depths, give her the Cursemark of Death (from Ranni's quest at the Divine Tower of Liurnia), then enter the Prince of Death's cocoon in Fia's dream.",
             "Killing Fia or D's brother early can strand the quest — treat as missable per playthrough.",
@@ -2012,6 +2097,7 @@ static GUIDES: &[Guide] = &[
         appid: ER,
         matches: &["elden ring"],
         missable: false,
+        deadline: "",
         rules: &[
             "The platinum: every other achievement. Biggest planning items are the three endings (save backup before the final boss) and the four Legendary collections — everything else falls out of a thorough playthrough.",
         ],
@@ -2030,6 +2116,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["enkindle"],
         missable: false,
+        deadline: "",
         rules: &["Light any bonfire flame — happens naturally in the first minutes."],
         locations: &["Cemetery of Ash — first bonfire"],
         phase: "NG",
@@ -2043,6 +2130,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["embrace the flame"],
         missable: false,
+        deadline: "",
         rules: &[
             "Become a Host of Embers: use an Ember item, or simply defeat Iudex Gundyr (boss kills restore ember status).",
         ],
@@ -2058,6 +2146,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["iudex gundyr"],
         missable: false,
+        deadline: "",
         rules: &[
             "The tutorial boss. Pull the sword from his chest to start the fight; his phase-2 serpent form is weak to fire and staggers to charged heavies.",
         ],
@@ -2073,6 +2162,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["vordt of the boreal valley"],
         missable: false,
+        deadline: "",
         rules: &[
             "First real boss of the High Wall. Stay under his chin and strafe left; in phase 2 sprint TOWARD him after the charge to avoid the frost breath.",
         ],
@@ -2088,6 +2178,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["covenant: way of blue"],
         missable: false,
+        deadline: "",
         rules: &[
             "Talk to Emma, the High Priestess in the High Wall's cathedral (where you get the Small Lothric Banner) and accept the covenant.",
         ],
@@ -2103,6 +2194,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["curse-rotted greatwood"],
         missable: false,
+        deadline: "",
         rules: &[
             "Optional boss in the Undead Settlement — hit the white egg sacs; the real fight starts when the floor collapses (aim for the arm-hand and the sac on its groin).",
             "Join the Mound-makers BEFORE killing it if you want the easy covenant route (see that entry).",
@@ -2119,6 +2211,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["covenant: blue sentinels"],
         missable: false,
+        deadline: "",
         rules: &[
             "Talk to Horace the Hushed at the Halfway Fortress bonfire (Road of Sacrifices) — with Anri — and accept. Don't attack him first.",
         ],
@@ -2134,6 +2227,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["crystal sage"],
         missable: false,
+        deadline: "",
         rules: &[
             "Road of Sacrifices boss — kill the clones (they die in one hit and don't fire homing spells); the real Sage takes bonus damage from strike weapons and staggers easily.",
         ],
@@ -2149,6 +2243,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["lords of cinder: abyss watchers"],
         missable: false,
+        deadline: "",
         rules: &[
             "First Lord of Cinder, end of Farron Keep. Phase 1: let the red-eyed watcher fight alongside you. Phase 2 adds fire trails — stay aggressive, he has low HP.",
         ],
@@ -2164,6 +2259,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["deacons of the deep"],
         missable: false,
+        deadline: "",
         rules: &[
             "Kill the red-glowing deacon to damage the horde; in phase 2 burst down Archdeacon Royce before the curse bar fills. AoE weapons and pyromancy shine.",
         ],
@@ -2179,6 +2275,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["high lord wolnir"],
         missable: false,
+        deadline: "",
         rules: &[
             "Break the three glowing bracelets — everything else is a distraction. Watch the darkness wave (sprint back) and the skeleton adds near the end.",
         ],
@@ -2194,6 +2291,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["covenant: warrior of sunlight"],
         missable: false,
+        deadline: "",
         rules: &[
             "Pick up the Warrior of Sunlight tome in the Undead Settlement: in the building with the estus-soup cauldron, drop through the hole in the floor near the fireplace.",
         ],
@@ -2209,6 +2307,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["pontiff sulyvahn"],
         missable: false,
+        deadline: "",
         rules: &[
             "The mid-game skill check. His delayed swings punish panic rolls — dodge INTO the swords. Phase 2 clone: kill it fast or trade aggressively. Londor Pale Shade and swordmaster summons available.",
         ],
@@ -2224,6 +2323,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["covenant: watchdogs of farron"],
         missable: false,
+        deadline: "",
         rules: &[
             "Speak to the Old Wolf of Farron: from the Keep Ruins bonfire area, ride the ladder-tower elevator up to the sleeping wolf and accept.",
         ],
@@ -2239,6 +2339,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["dancer of the boreal valley"],
         missable: false,
+        deadline: "",
         rules: &[
             "Triggers after the third Lord of Cinder (or by killing Emma early — don't, unless you're sequence-breaking on purpose). Stay behind her hips; phase 2's spin combo demands patience.",
         ],
@@ -2254,6 +2355,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["lord of cinder: yhorm the giant"],
         missable: false,
+        deadline: "",
         rules: &[
             "Grab Storm Ruler from beside his throne (or from Siegward): charge its skill and release for massive damage — it's the intended mechanic. Complete Siegward's questline for the best version of this fight.",
         ],
@@ -2269,6 +2371,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["lord of cinder: aldrich, devourer of gods"],
         missable: false,
+        deadline: "",
         rules: &[
             "Anor Londo's Lord of Cinder. Attack the tail-end body, not the head. Sprint AWAY along the arena edge during the arrow rain; fire resistance helps in phase 2.",
         ],
@@ -2284,6 +2387,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["old demon king"],
         missable: false,
+        deadline: "",
         rules: &[
             "Optional boss of Smouldering Lake. Max fire resistance, stay at his sides, and back off for the death-explosion when he's nearly dead. Knight Slayer Tsorig's summon tanks well.",
         ],
@@ -2299,6 +2403,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["dragonslayer armour"],
         missable: false,
+        deadline: "",
         rules: &[
             "Lothric Castle bridge fight. The armour staggers to shield-breaks and charged heavies; watch the Pilgrim Butterflies' projectiles from the sides in phase 2.",
         ],
@@ -2314,6 +2419,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["oceiros, the consumed king"],
         missable: false,
+        deadline: "",
         rules: &[
             "Optional boss in the Consumed King's Garden (drop down from the Dancer's arena side path). Phase 2 charges track hard — hug his left hind leg. Untended Graves lies behind his arena.",
         ],
@@ -2329,6 +2435,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["untended graves"],
         missable: false,
+        deadline: "",
         rules: &[
             "Hidden area: behind Oceiros' arena, hit the illusory wall at the back of the room with the chest. A dark mirror of the Cemetery of Ash — also home to the Eyes of a Fire Keeper (End of Fire ending).",
         ],
@@ -2344,6 +2451,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["champion gundyr"],
         missable: false,
+        deadline: "",
         rules: &[
             "Untended Graves' guardian — the aggressive true form of Iudex. He punishes passive play; stay point-blank and dodge into his swings. Parry builds can trivialize him.",
         ],
@@ -2359,6 +2467,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["supreme weapon reinforcement"],
         missable: false,
+        deadline: "",
         rules: &[
             "Reinforce any weapon to +10 (or +5 for special weapons): needs a Titanite Slab — guaranteed slabs come from late areas and quest rewards (e.g., Grand Archives, Siegward's quest).",
         ],
@@ -2374,6 +2483,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["archdragon peak"],
         missable: false,
+        deadline: "",
         rules: &[
             "Secret area: from the Irithyll Dungeon cell overlooking the mountain (near the lift), use the Path of the Dragon gesture — obtained from the dead dragon-worshipper at the Consumed King's Garden altar.",
         ],
@@ -2389,6 +2499,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["ancient wyvern"],
         missable: false,
+        deadline: "",
         rules: &[
             "A puzzle boss: run past it, climb the side route to the platform above its head, and plunge-attack for the instant kill.",
         ],
@@ -2404,6 +2515,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["the nameless king"],
         missable: false,
+        deadline: "",
         rules: &[
             "Widely considered the hardest boss in the base game — ring the Great Belfry bell to summon the storm. Phase 1: attack the wyvern's head. Phase 2: dodge on his wind-up sounds, not on sight.",
             "Lightning protection for phase 2; the fight rewards patience over greed.",
@@ -2420,6 +2532,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["lord of cinder: lothric, younger prince"],
         missable: false,
+        deadline: "",
         rules: &[
             "The final Lord of Cinder atop the Grand Archives. Kill Lothric (the rider) — when Lorian falls, burst the prince before the revival prayer finishes.",
         ],
@@ -2435,6 +2548,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["to link the first flame"],
         missable: false,
+        deadline: "",
         rules: &[
             "The default ending: after the Soul of Cinder, touch the bonfire. If you're collecting all three ending achievements, do this LAST or from a backed-up save.",
         ],
@@ -2450,6 +2564,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["master of infusion"],
         missable: false,
+        deadline: "",
         rules: &[
             "Perform every infusion type once. Give Andre all four coals: Farron Coal (Road of Sacrifices), Sage's Coal (Farron Keep), Profaned Coal (Irithyll Dungeon), Giant's Coal (Anor Londo). Infusing one dagger repeatedly with each gem works.",
         ],
@@ -2471,6 +2586,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["master of expression"],
         missable: true,
+        deadline: "Several gestures die with their NPCs — collect them as each questline advances",
         rules: &[
             "Learn all 33 gestures — several come from NPC questlines and can be permanently missed if quests fail (Sirris, Siegward, Orbeck, Yuria, covenant joins all teach gestures).",
             "Follow a gesture checklist alongside your NPC quests; the Path of the Dragon gesture (Consumed King's Garden) is the famous one people miss.",
@@ -2487,6 +2603,7 @@ static GUIDES: &[Guide] = &[
         appid: DS3,
         matches: &["the dark soul"],
         missable: false,
+        deadline: "",
         rules: &[
             "The platinum: every other achievement. Pace yourself across the NG/NG+/NG++ ring run and keep the NPC questlines alive — the spell and gesture masters are where runs go wrong.",
         ],
@@ -2505,6 +2622,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["enkindle"],
         missable: false,
+        deadline: "",
         rules: &[
             "Kindle any bonfire (spend a humanity at it) — not just resting; use the Kindle option.",
         ],
@@ -2520,6 +2638,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["estus flask"],
         missable: false,
+        deadline: "",
         rules: &["Given by Oscar of Astora during the Undead Asylum tutorial — unmissable."],
         locations: &["Northern Undead Asylum"],
         phase: "NG",
@@ -2533,6 +2652,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["reach lordran"],
         missable: false,
+        deadline: "",
         rules: &["The crow carries you from the Asylum to Firelink Shrine — story progress."],
         locations: &["Firelink Shrine"],
         phase: "NG",
@@ -2546,6 +2666,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["ring the bell (undead church)"],
         missable: false,
+        deadline: "",
         rules: &[
             "Defeat the Bell Gargoyles atop the Undead Parish and ring the first Bell of Awakening. Solaire's summon sign sits before the fog gate.",
         ],
@@ -2561,6 +2682,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["ring the bell (quelaag's domain)"],
         missable: false,
+        deadline: "",
         rules: &[
             "Defeat Chaos Witch Quelaag below Blighttown and ring the second Bell of Awakening behind her arena.",
         ],
@@ -2576,6 +2698,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["covenant: way of white"],
         missable: false,
+        deadline: "",
         rules: &[
             "Easiest covenant: talk to Petrus of Thorolund at Firelink Shrine and join (or start as a Cleric — but joining via Petrus pops it reliably).",
         ],
@@ -2591,6 +2714,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["reach anor londo"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ring both bells, clear Sen's Fortress, and the bat-wing demons carry you up. (This trophy occasionally fails to fire — it self-corrects next playthrough.)",
         ],
@@ -2606,6 +2730,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["lordvessel"],
         missable: false,
+        deadline: "",
         rules: &[
             "Defeat Ornstein & Smough, then receive the Lordvessel from Gwynevere. (If you're chasing the Darkwraith covenant, do NOT place it with Frampt afterwards.)",
         ],
@@ -2621,6 +2746,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["rite of kindling"],
         missable: false,
+        deadline: "",
         rules: &["Defeat Pinwheel in the Catacombs — unlocks kindling bonfires to 20 estus."],
         locations: &["The Catacombs — Pinwheel's tomb"],
         phase: "NG",
@@ -2634,6 +2760,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["art of abysswalking"],
         missable: false,
+        deadline: "",
         rules: &[
             "Defeat Great Grey Wolf Sif in Darkroot Garden for the Covenant of Artorias ring — required to survive the Abyss (Four Kings).",
         ],
@@ -2649,6 +2776,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["defeat gravelord nito"],
         missable: false,
+        deadline: "",
         rules: &[
             "Lord Soul boss beneath the Tomb of the Giants (needs the Lordvessel). Kill the small skeletons first — the giant ones only die permanently to divine weapons.",
         ],
@@ -2664,6 +2792,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["defeat bed of chaos"],
         missable: false,
+        deadline: "",
         rules: &[
             "Break the two side orbs, then jump into the center. Progress persists through deaths — each orb stays broken. Sprint-jump the floor collapse and don't fight it fair (there is no fair).",
         ],
@@ -2679,6 +2808,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["defeat the four kings"],
         missable: false,
+        deadline: "",
         rules: &[
             "In the Abyss (Covenant of Artorias ring required). DPS race: heavy armor + high damage beats finesse — kill each king before the next spawns.",
         ],
@@ -2694,6 +2824,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["defeat seath the scaleless"],
         missable: false,
+        deadline: "",
         rules: &[
             "First visit to his crystal cave is a scripted death (or grab the doll route) — in the real fight, break the Primordial Crystal behind him to make him mortal. Cut his blue tail for the Moonlight Greatsword while you're there.",
         ],
@@ -2709,6 +2840,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["defeat the dark sun gwyndolin"],
         missable: false,
+        deadline: "",
         rules: &[
             "Optional boss behind the illusory fog below Anor Londo's rotating stairs (needs the Darkmoon Seance Ring, from the Catacombs illusory wall).",
             "WARNING: if you want the Blade of the Darkmoon covenant achievement, JOIN IT FIRST — killing Gwyndolin locks the covenant for the playthrough.",
@@ -2725,6 +2857,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["defeat crossbreed priscilla"],
         missable: false,
+        deadline: "",
         rules: &[
             "Optional boss of the Painted World of Ariamis — enter via the huge painting in Anor Londo while holding the Peculiar Doll (Undead Asylum revisit, your old cell).",
             "She turns invisible: watch the snow footprints. Cut her tail first for Priscilla's Dagger (Knight's Honor).",
@@ -2741,6 +2874,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["to link the fire"],
         missable: false,
+        deadline: "",
         rules: &[
             "After Gwyn falls, touch the bonfire in the Kiln to link the fire. For both ending achievements in one cycle, back up your save before killing Gwyn.",
         ],
@@ -2756,6 +2890,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["dark lord"],
         missable: false,
+        deadline: "",
         rules: &[
             "After Gwyn falls, walk OUT of the arena instead of touching the bonfire — the Dark Lord ending plays once you cross the exit.",
         ],
@@ -2771,6 +2906,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["strongest weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Reinforce any standard weapon to +15: give Andre the Large Ember (Depths, chest room near the butcher) for +10, then the Very Large Ember (New Londo Ruins, after draining the water) for +15.",
         ],
@@ -2786,6 +2922,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["raw weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ascend a +5 weapon down the Raw path to Raw +5 at Andre — requires the Large Ember (Depths).",
         ],
@@ -2801,6 +2938,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["crystal weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ascend a +10 weapon to Crystal and reinforce to Crystal +5 at the Giant Blacksmith — requires the Crystal Ember (The Duke's Archives). Crystal gear can't be repaired; use a throwaway weapon.",
         ],
@@ -2816,6 +2954,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["lightning weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ascend a +10 weapon to Lightning and reinforce to Lightning +5 at the Giant Blacksmith — no ember needed.",
         ],
@@ -2831,6 +2970,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["magic weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ascend a +5 weapon to Magic (Rickert of Vinheim, New Londo) and reinforce to Magic +10 — the +6..+10 range needs the Large Magic Ember from The Duke's Archives.",
         ],
@@ -2846,6 +2986,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["enchanted weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ascend a Magic +5 weapon to Enchanted and reinforce to Enchanted +5 at Rickert — requires the Enchanted Ember (Darkroot Garden, mushroom area chest).",
         ],
@@ -2861,6 +3002,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["divine weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ascend a +5 weapon to Divine (Andre, with the Divine Ember from Darkroot Garden) and reinforce to Divine +10 — the +6..+10 range needs the Large Divine Ember (Tomb of the Giants).",
         ],
@@ -2876,6 +3018,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["occult weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ascend a Divine +5 weapon to Occult and reinforce to Occult +5 at Andre — requires the Dark Ember (Painted World, behind the Annex Key door).",
         ],
@@ -2891,6 +3034,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["fire weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ascend a +5 weapon to Fire (Blacksmith Vamos, Catacombs) and reinforce to Fire +10 — the +6..+10 range needs the Large Flame Ember (Demon Ruins).",
         ],
@@ -2906,6 +3050,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["chaos weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Ascend a Fire +5 weapon to Chaos and reinforce to Chaos +5 at Vamos — requires the Chaos Flame Ember (Demon Ruins).",
         ],
@@ -2921,6 +3066,7 @@ static GUIDES: &[Guide] = &[
         appid: DS1,
         matches: &["the dark soul"],
         missable: false,
+        deadline: "",
         rules: &[
             "The platinum: every other achievement. Knight's Honor (NG++ boss souls) is the long pole — plan the three-cycle weapon route from the start and keep the spell vendors alive.",
         ],
@@ -2939,6 +3085,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["self recollection"],
         missable: false,
+        deadline: "",
         rules: &[
             "Reclaim your flesh in the character-creation coffin at Things Betwixt — story opening.",
         ],
@@ -2954,6 +3101,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["this is dark souls"],
         missable: false,
+        deadline: "",
         rules: &["Die once. You will."],
         locations: &["Anywhere"],
         phase: "NG",
@@ -2967,6 +3115,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["last giant"],
         missable: false,
+        deadline: "",
         rules: &[
             "The first boss, below the Forest of Fallen Giants — attack the legs, run through them when he stomps, and watch the arm-club sweep in phase 2.",
         ],
@@ -2982,6 +3131,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["covenant of the meek"],
         missable: false,
+        deadline: "",
         rules: &["Way of Blue: talk to Crestfallen Saulden at the Majula monument and join."],
         locations: &["Majula — the monument"],
         phase: "NG",
@@ -2995,6 +3145,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["sinner's bonfire"],
         missable: false,
+        deadline: "",
         rules: &[
             "Light the primal bonfire beyond the Lost Sinner in Sinner's Rise (one of the four Great Soul paths).",
         ],
@@ -3010,6 +3161,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["gulch bonfire"],
         missable: false,
+        deadline: "",
         rules: &["Light the primal bonfire past The Rotten at the bottom of the Black Gulch."],
         locations: &["Black Gulch — past The Rotten"],
         phase: "NG",
@@ -3023,6 +3175,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["iron keep bonfire"],
         missable: false,
+        deadline: "",
         rules: &["Light the primal bonfire past the Old Iron King in the Iron Keep."],
         locations: &["Iron Keep — past the Old Iron King"],
         phase: "NG",
@@ -3036,6 +3189,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["brightstone bonfire"],
         missable: false,
+        deadline: "",
         rules: &[
             "Light the primal bonfire past the Duke's Dear Freja in Brightstone Cove Tseldora.",
         ],
@@ -3051,6 +3205,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["change of clothes"],
         missable: false,
+        deadline: "",
         rules: &[
             "Unpetrify Rosabeth of Melfia (Fragrant Branch of Yore) below the Shaded Woods gate, then give her ANY piece of armor you're willing to part with.",
         ],
@@ -3066,6 +3221,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["clangorous covenant"],
         missable: false,
+        deadline: "",
         rules: &[
             "Bell Keepers: talk to the dwarf on the Belfry Luna approach (Lost Bastille, via the Pharros contraption) and join.",
         ],
@@ -3081,6 +3237,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["gnawing covenant"],
         missable: false,
+        deadline: "",
         rules: &[
             "Rat King: speak to the Rat King past the Royal Rat Vanguard in the Grave of Saints (or via Doors of Pharros) and join.",
         ],
@@ -3096,6 +3253,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["supreme weapon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Reinforce any weapon to its maximum (+10 standard / +5 special) — needs a Titanite Slab (Petrified Dragon Bone for boss weapons). Slabs come from late-game areas, Vendrick's blessing route, and merchants in NG+.",
         ],
@@ -3111,6 +3269,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["looking glass knight"],
         missable: false,
+        deadline: "",
         rules: &[
             "Boss of the Drangleic Castle approach — the mirror shield summons phantoms (NPC or player); kill the summon fast or interrupt the summoning animation. Lightning-infused himself, so lightning resist helps.",
         ],
@@ -3126,6 +3285,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["king's ring"],
         missable: false,
+        deadline: "",
         rules: &[
             "Deep in the Undead Crypt: defeat Velstadt, the Royal Aegis, then take the King's Ring from the chamber beyond — it opens the three king's doors (Aldia's Keep, Forest of Fallen Giants, Shrine of Amana).",
         ],
@@ -3141,6 +3301,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["ancient dragon"],
         missable: false,
+        deadline: "",
         rules: &[
             "Acquire the Ashen Mist Heart: with the King's Ring, ascend through Aldia's Keep to the Dragon Shrine and speak with the Ancient Dragon — it grants the heart peacefully (fighting it is optional and brutal).",
         ],
@@ -3156,6 +3317,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["covenant of the fittest"],
         missable: false,
+        deadline: "",
         rules: &[
             "Company of Champions: available from the very start — touch the obelisk by the Majula bonfire and join. (It hard-modes your game while active; join, pop the achievement, and leave if you like.)",
         ],
@@ -3171,6 +3333,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["brilliant covenant"],
         missable: false,
+        deadline: "",
         rules: &[
             "Heirs of the Sun: pray at the sun altar on the ledge in Harvest Valley (near the Crypt entrance area of the mines) and join. Yes — DS2's sunbro altar is easy to walk past.",
         ],
@@ -3186,6 +3349,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["reflections on disembodiment"],
         missable: false,
+        deadline: "",
         rules: &[
             "Vengarl's equipment: find his talking head in the Shaded Woods fog clearing, buy his gear, and defeat his wandering headless body (also in the Shaded Woods area) for the rest.",
         ],
@@ -3201,6 +3365,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["protector covenant"],
         missable: false,
+        deadline: "",
         rules: &[
             "Blue Sentinels: talk to Targray in the Cathedral of Blue (past the Old Dragonslayer, Heide's Tower) while holding a Token of Fidelity (earned by co-op, or found as treasure).",
         ],
@@ -3216,6 +3381,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["the heir"],
         missable: false,
+        deadline: "",
         rules: &[
             "See the ending: defeat Nashandra at the Throne of Want (after the Throne Watcher & Defender) and sit the throne.",
         ],
@@ -3231,6 +3397,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["vendrick"],
         missable: false,
+        deadline: "",
         rules: &[
             "Optional true fight with the hollow king in the Undead Crypt (enter his arena from the Velstadt side). Each Soul of a Giant you hold (from the Memories and the Black Gulch cave) cuts his absurd defense — bring at least four.",
         ],
@@ -3248,6 +3415,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["sanguinary covenant"],
         missable: false,
+        deadline: "",
         rules: &[
             "Brotherhood of Blood: talk to Titchy Gren past the Executioner's Chariot boss (Undead Purgatory) — requires a Token of Spite in your inventory.",
         ],
@@ -3263,6 +3431,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["abysmal covenant"],
         missable: false,
+        deadline: "",
         rules: &[
             "Pilgrims of Dark: find Darkdiver Grandahl at any of his three spots (Shaded Ruins trapdoor, Black Gulch ledge, Drangleic Castle) — you must have met him at all three before he lets you join at the last one.",
         ],
@@ -3278,6 +3447,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["garrulous miser"],
         missable: false,
+        deadline: "",
         rules: &[
             "Laddersmith Gilligan's equipment: meet him in Earthen Peak, later he moves to Majula (pay for his ladders). Buy his wares; his armor becomes available once his story concludes — see the wiki for the fastest route.",
         ],
@@ -3293,6 +3463,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["selfless giver"],
         missable: false,
+        deadline: "",
         rules: &[
             "Reach max rank (+3) in any covenant. Offline-friendliest: Company of Champions — offer 50 Awestones (farm the Executioner's Chariot area red phantoms, or Bonfire-Ascetic the Chariot for repeats).",
         ],
@@ -3308,6 +3479,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["holder of the fort"],
         missable: false,
+        deadline: "",
         rules: &[
             "Captain Drummond's equipment: meet him at the Forest of Fallen Giants (memory of the war via Ashen Mist Heart) and in the King's Gate area; his set unlocks for purchase/loot after his story — see the wiki route.",
         ],
@@ -3323,6 +3495,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["gathering of exiles"],
         missable: true,
+        deadline: "Don't kill recruitable NPCs (especially Licia) — population can't recover this run",
         rules: &[
             "Bring the wandering NPCs home to Majula: Licia (Heide's Tower — do NOT kill her, or the run is void), Carhillion (No-man's Wharf, needs 8 INT), Rosabeth (Shaded Woods gate), Gilligan (Earthen Peak), Lenigrast's key, Chloanne (Harvest Valley), and company.",
             "Pops once enough residents have settled — talk to each NPC until their move dialogue triggers.",
@@ -3339,6 +3512,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["covenant of ancients"],
         missable: false,
+        deadline: "",
         rules: &[
             "Dragon Remnants: present the Petrified Egg to Magerold of Lanafir at the Iron Keep. The egg lies in the Dragon Shrine — so this usually happens late.",
         ],
@@ -3354,6 +3528,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["curious map"],
         missable: false,
+        deadline: "",
         rules: &[
             "Light all four flames on the map inside the Majula mansion (House Key from Cale the Cartographer in the Forest of Fallen Giants). The flames light as you ignite the four primal bonfires.",
         ],
@@ -3369,6 +3544,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["smith for life"],
         missable: false,
+        deadline: "",
         rules: &[
             "Steady Hand McDuff's equipment: give him the Dull Ember (found in the Iron Keep) to open his shop in the Lost Bastille, then buy out his equipment stock.",
         ],
@@ -3384,6 +3560,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["lucatiel"],
         missable: true,
+        deadline: "Exhaust her dialogue at every stop and win the boss fights she's summoned for",
         rules: &[
             "Talk to Lucatiel of Mirrah at every meeting spot (No-man's Wharf, Lost Bastille, Earthen Peak, Black Gulch...) and summon her for THREE boss fights where she survives — Flexile Sentry, the Rotten, and Freja are the usual picks.",
             "Exhaust her dialogue each time; miss the talks and the gear won't come this cycle.",
@@ -3400,6 +3577,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["gesture maestro"],
         missable: true,
+        deadline: "Some gestures come from mortal NPCs — grab them early",
         rules: &[
             "Learn all gestures — most come from NPC dialogue (Saulden, Pate, Creighton, Manscorpion Tark, the Milfanito...) so keep NPCs alive and exhaust their talks.",
             "A couple hang off quest outcomes (e.g., Pate vs Creighton) — follow a gesture checklist per playthrough.",
@@ -3416,6 +3594,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["moonlight greatsword"],
         missable: true,
+        deadline: "Use Benhart's summon in three boss fights and keep him alive to the end",
         rules: &[
             "Benhart of Jugo's equipment: exhaust his dialogue at his spots (Majula path, Shaded Woods memorial...) and summon him for three boss victories (e.g., Prowling Magnus, Looking Glass Knight, Throne duo/Giant Lord).",
             "After the third survival, talk to him for his gear — including the Moonlight Greatsword.",
@@ -3432,6 +3611,7 @@ static GUIDES: &[Guide] = &[
         appid: DS2,
         matches: &["the dark soul"],
         missable: false,
+        deadline: "",
         rules: &[
             "The platinum: everything else. DS2 is the friendliest platinum of the trilogy thanks to Bonfire Ascetics — one thorough playthrough plus targeted ascetic burns can cover the spell masters and covenants.",
         ],
