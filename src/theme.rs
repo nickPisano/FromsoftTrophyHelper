@@ -27,6 +27,11 @@ pub const SELECTION: egui::Color32 = egui::Color32::from_rgb(94, 74, 34);
 pub const TOAST_BG: egui::Color32 = egui::Color32::from_rgb(43, 37, 28);
 pub const ROW_HOVER: egui::Color32 = egui::Color32::from_rgb(38, 33, 25);
 
+// World map surfaces.
+pub const MAP_BG: egui::Color32 = egui::Color32::from_rgb(16, 14, 11);
+pub const MAP_EDGE: egui::Color32 = egui::Color32::from_rgb(78, 67, 48);
+pub const MAP_CLEAR: egui::Color32 = egui::Color32::from_rgb(70, 92, 72);
+
 const DISPLAY_FAMILY: &str = "display";
 
 /// Install fonts and the full style. Call once at startup.

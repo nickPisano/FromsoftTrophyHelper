@@ -15,7 +15,51 @@ pub struct Area {
     pub weak: &'static [&'static str],
     /// Wiki page for the area, which carries its map.
     pub map_url: &'static str,
+    /// Position on the drawn world map, normalised 0..1 with y increasing
+    /// downward. Our own layout — it echoes how the world actually connects
+    /// without reproducing anyone's artwork.
+    pub pos: (f32, f32),
 }
+
+/// How the areas actually connect, by name so that reordering the table
+/// above can't silently rewire the graph.
+pub fn links_for(appid: u32) -> &'static [(&'static str, &'static str)] {
+    match appid {
+        570940 | 211420 => DS1_LINKS,
+        _ => &[],
+    }
+}
+
+pub fn index_of(appid: u32, name: &str) -> Option<usize> {
+    areas_for(appid).iter().position(|a| a.name == name)
+}
+
+static DS1_LINKS: &[(&str, &str)] = &[
+    ("Northern Undead Asylum", "Firelink Shrine"),
+    ("Firelink Shrine", "Undead Burg"),
+    ("Firelink Shrine", "New Londo Ruins"),
+    ("Firelink Shrine", "The Catacombs"),
+    ("Firelink Shrine", "Kiln of the First Flame"),
+    ("Undead Burg", "Undead Parish"),
+    ("Undead Burg", "The Depths"),
+    ("Undead Parish", "Darkroot Garden"),
+    ("Undead Parish", "Sen's Fortress"),
+    ("Darkroot Garden", "Darkroot Basin"),
+    ("Darkroot Basin", "Valley of Drakes"),
+    ("Sen's Fortress", "Anor Londo"),
+    ("Anor Londo", "Painted World of Ariamis"),
+    ("Anor Londo", "The Duke's Archives"),
+    ("The Duke's Archives", "Crystal Cave"),
+    ("The Depths", "Blighttown"),
+    ("Blighttown", "Quelaag's Domain"),
+    ("Blighttown", "The Great Hollow"),
+    ("Blighttown", "Valley of Drakes"),
+    ("The Great Hollow", "Ash Lake"),
+    ("Quelaag's Domain", "Demon Ruins"),
+    ("Demon Ruins", "Lost Izalith"),
+    ("New Londo Ruins", "Valley of Drakes"),
+    ("The Catacombs", "Tomb of the Giants"),
+];
 
 /// Areas for a game, in rough progression order. Empty when the game has no
 /// area data yet (only Dark Souls 1 is mapped so far).
@@ -64,24 +108,28 @@ static DS1_AREAS: &[Area] = &[
         strong: &["undead asylum"],
         weak: &["oscar"],
         map_url: "https://darksouls.wiki.fextralife.com/Northern+Undead+Asylum",
+        pos: (0.07, 0.09),
     },
     Area {
         name: "Firelink Shrine",
         strong: &["firelink"],
         weak: &["griggs", "laurentius", "petrus", "siegmeyer", "logan"],
         map_url: "https://darksouls.wiki.fextralife.com/Firelink+Shrine",
+        pos: (0.53, 0.52),
     },
     Area {
         name: "Undead Burg",
         strong: &["undead burg"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Undead+Burg",
+        pos: (0.40, 0.45),
     },
     Area {
         name: "Undead Parish",
         strong: &["undead parish", "sunlight altar"],
         weak: &["reah", "oswald", "warrior of sunlight"],
         map_url: "https://darksouls.wiki.fextralife.com/Undead+Parish",
+        pos: (0.34, 0.35),
     },
     Area {
         name: "Darkroot Garden",
@@ -90,36 +138,42 @@ static DS1_AREAS: &[Area] = &[
         strong: &["darkroot garden", "defeat sif"],
         weak: &["giant stone knights", "shiva"],
         map_url: "https://darksouls.wiki.fextralife.com/Darkroot+Garden",
+        pos: (0.17, 0.30),
     },
     Area {
         name: "Darkroot Basin",
         strong: &["darkroot basin"],
         weak: &["dusk"],
         map_url: "https://darksouls.wiki.fextralife.com/Darkroot+Basin",
+        pos: (0.09, 0.41),
     },
     Area {
         name: "The Depths",
         strong: &["depths", "gaping dragon"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Depths",
+        pos: (0.39, 0.59),
     },
     Area {
         name: "Blighttown",
         strong: &["blighttown"],
         weak: &["quelana"],
         map_url: "https://darksouls.wiki.fextralife.com/Blighttown",
+        pos: (0.33, 0.72),
     },
     Area {
         name: "Quelaag's Domain",
         strong: &["quelaag's domain"],
         weak: &["eingyi", "chaos servant"],
         map_url: "https://darksouls.wiki.fextralife.com/Quelaag's+Domain",
+        pos: (0.47, 0.80),
     },
     Area {
         name: "Sen's Fortress",
         strong: &["sen's fortress"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Sen's+Fortress",
+        pos: (0.50, 0.30),
     },
     Area {
         name: "Anor Londo",
@@ -133,78 +187,91 @@ static DS1_AREAS: &[Area] = &[
             "blade of the darkmoon",
         ],
         map_url: "https://darksouls.wiki.fextralife.com/Anor+Londo",
+        pos: (0.50, 0.18),
     },
     Area {
         name: "Painted World of Ariamis",
         strong: &["painted world"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Painted+World+of+Ariamis",
+        pos: (0.30, 0.11),
     },
     Area {
         name: "The Catacombs",
         strong: &["catacombs"],
         weak: &["gravelord"],
         map_url: "https://darksouls.wiki.fextralife.com/The+Catacombs",
+        pos: (0.74, 0.55),
     },
     Area {
         name: "Tomb of the Giants",
         strong: &["tomb of the giants"],
         weak: &["patches"],
         map_url: "https://darksouls.wiki.fextralife.com/Tomb+of+Giants",
+        pos: (0.86, 0.67),
     },
     Area {
         name: "New Londo Ruins",
         strong: &["new londo"],
         weak: &["ingward", "darkwraith", "four kings", "kaathe"],
         map_url: "https://darksouls.wiki.fextralife.com/New+Londo+Ruins",
+        pos: (0.63, 0.65),
     },
     Area {
         name: "Valley of Drakes",
         strong: &["valley of drakes"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Valley+of+Drakes",
+        pos: (0.25, 0.60),
     },
     Area {
         name: "The Great Hollow",
         strong: &["great hollow"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/The+Great+Hollow",
+        pos: (0.17, 0.84),
     },
     Area {
         name: "Ash Lake",
         strong: &["ash lake"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Ash+Lake",
+        pos: (0.09, 0.94),
     },
     Area {
         name: "The Duke's Archives",
         strong: &["archives", "seath"],
         weak: &["pisaca"],
         map_url: "https://darksouls.wiki.fextralife.com/The+Duke's+Archives",
+        pos: (0.74, 0.14),
     },
     Area {
         name: "Crystal Cave",
         strong: &["crystal cave"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Crystal+Cave",
+        pos: (0.88, 0.07),
     },
     Area {
         name: "Demon Ruins",
         strong: &["demon ruins"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Demon+Ruins",
+        pos: (0.58, 0.88),
     },
     Area {
         name: "Lost Izalith",
         strong: &["lost izalith"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Lost+Izalith",
+        pos: (0.70, 0.94),
     },
     Area {
         name: "Kiln of the First Flame",
         strong: &["kiln"],
         weak: &["black knight"],
         map_url: "https://darksouls.wiki.fextralife.com/Kiln+of+the+First+Flame",
+        pos: (0.50, 0.03),
     },
 ];
 
@@ -325,6 +392,73 @@ mod tests {
         resolve(appid, item, "")
             .map(|i| areas_for(appid)[i].name)
             .unwrap_or("<unrouted>")
+    }
+
+    #[test]
+    fn world_map_layout_is_sane() {
+        let areas = areas_for(DS1);
+        for a in areas {
+            let (x, y) = a.pos;
+            assert!(
+                (0.0..=1.0).contains(&x) && (0.0..=1.0).contains(&y),
+                "{} sits outside the map at {:?}",
+                a.name,
+                a.pos
+            );
+        }
+        // Two areas on the same spot means a copy-pasted coordinate.
+        for (i, a) in areas.iter().enumerate() {
+            for b in &areas[i + 1..] {
+                let d = (a.pos.0 - b.pos.0).abs() + (a.pos.1 - b.pos.1).abs();
+                assert!(d > 0.02, "{} and {} overlap on the map", a.name, b.name);
+            }
+        }
+    }
+
+    #[test]
+    fn every_link_endpoint_exists() {
+        let links = super::links_for(DS1);
+        assert!(!links.is_empty());
+        for (a, b) in links {
+            assert!(
+                super::index_of(DS1, a).is_some(),
+                "unknown area in link: {a}"
+            );
+            assert!(
+                super::index_of(DS1, b).is_some(),
+                "unknown area in link: {b}"
+            );
+            assert_ne!(a, b, "self-link on {a}");
+        }
+        assert!(super::links_for(1245620).is_empty());
+    }
+
+    #[test]
+    fn world_graph_is_connected() {
+        // Every area should be reachable from Firelink, or the map will show
+        // orphan nodes floating with no route to them.
+        let areas = areas_for(DS1);
+        let start = super::index_of(DS1, "Firelink Shrine").unwrap();
+        let mut seen = vec![false; areas.len()];
+        let mut stack = vec![start];
+        seen[start] = true;
+        while let Some(i) = stack.pop() {
+            for (a, b) in super::links_for(DS1) {
+                let (ia, ib) = (
+                    super::index_of(DS1, a).unwrap(),
+                    super::index_of(DS1, b).unwrap(),
+                );
+                for (from, to) in [(ia, ib), (ib, ia)] {
+                    if from == i && !seen[to] {
+                        seen[to] = true;
+                        stack.push(to);
+                    }
+                }
+            }
+        }
+        for (i, ok) in seen.iter().enumerate() {
+            assert!(*ok, "{} is unreachable on the world map", areas[i].name);
+        }
     }
 
     #[test]
