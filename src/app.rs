@@ -3,6 +3,7 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use eframe::egui;
 
+use crate::areas;
 use crate::games::{self, GAMES};
 use crate::guides;
 use crate::steam::{self, AchRow, GameData, Msg};
@@ -84,6 +85,7 @@ enum GameView {
     Achievements,
     Planner,
     Missables,
+    Areas,
 }
 
 #[derive(PartialEq, Clone, Copy)]
@@ -124,6 +126,8 @@ pub struct App {
     checklist_done: HashMap<String, BTreeSet<String>>,
     /// Quick-filter text for long checklists (transient).
     checklist_filter: String,
+    /// By Area view: hide items already collected.
+    areas_hide_done: bool,
     /// Free-text personal notes, keyed by "appid/api_name". Persisted.
     notes: HashMap<String, String>,
 
@@ -192,6 +196,7 @@ impl App {
             selected_ach: HashMap::new(),
             checklist_done,
             checklist_filter: String::new(),
+            areas_hide_done: true,
             notes,
             search: String::new(),
             status_filter: StatusFilter::All,
@@ -805,6 +810,9 @@ impl App {
                     GameView::Missables,
                     "\u{26A0} Missables",
                 );
+                if !areas::areas_for(appid).is_empty() {
+                    ui.selectable_value(&mut self.game_view, GameView::Areas, "\u{1F4CD} By Area");
+                }
             });
             ui.separator();
             egui::ScrollArea::vertical()
@@ -820,6 +828,27 @@ impl App {
                                 egui::RichText::new(
                                     "Scan the game first — the planner organizes your \
                                      remaining achievements by playthrough.",
+                                )
+                                .color(DIM),
+                            );
+                        }
+                    },
+                    GameView::Areas => match &view_rows {
+                        Some(rows) => {
+                            nav_clicked = areas_view(
+                                ui,
+                                game,
+                                rows,
+                                &mut self.checklist_done,
+                                &mut self.areas_hide_done,
+                            );
+                        }
+                        None => {
+                            ui.add_space(16.0);
+                            ui.label(
+                                egui::RichText::new(
+                                    "Scan the game first — this view routes every outstanding \
+                                     checklist item to the area you'll find it in.",
                                 )
                                 .color(DIM),
                             );
@@ -867,6 +896,161 @@ impl App {
             self.game_view = GameView::Achievements;
         }
     }
+}
+
+/// Every outstanding checklist item routed to the area you'll find it in —
+/// the "I'm here now, what do I need?" view. Returns a clicked achievement.
+fn areas_view(
+    ui: &mut egui::Ui,
+    game: &games::Game,
+    rows: &[AchRow],
+    checklist_done: &mut HashMap<String, BTreeSet<String>>,
+    hide_done: &mut bool,
+) -> Option<String> {
+    let mut clicked = None;
+    let all_areas = areas::areas_for(game.appid);
+
+    // (achievement name, api_name, item text) bucketed per area.
+    let mut grouped: Vec<Vec<(&str, &str, &'static str)>> = vec![Vec::new(); all_areas.len()];
+    let mut unrouted: Vec<(&str, &str, &'static str)> = Vec::new();
+
+    for row in rows {
+        // An achievement you already earned has nothing left to route.
+        if row.unlocked == Some(true) {
+            continue;
+        }
+        let Some(guide) = guides::find(game.appid, &row.name) else {
+            continue;
+        };
+        let mut section = "";
+        for item in guide.checklist {
+            if let Some(heading) = item.strip_prefix("## ") {
+                section = heading;
+                continue;
+            }
+            let entry = (row.name.as_str(), row.api_name.as_str(), *item);
+            match areas::resolve(game.appid, item, section) {
+                Some(i) => grouped[i].push(entry),
+                None => unrouted.push(entry),
+            }
+        }
+    }
+
+    ui.add_space(8.0);
+    ui.label(theme::display(format!("{} — By Area", game.title), 22.0));
+    if grouped.iter().all(|g| g.is_empty()) && unrouted.is_empty() {
+        ui.label(
+            egui::RichText::new(
+                "Nothing left to route — the collect-them-all achievements here are done \
+                 (or not scanned yet).",
+            )
+            .color(DIM),
+        );
+        return None;
+    }
+    ui.label(
+        egui::RichText::new(
+            "Every item you still need, grouped by where you go to get it. Tick things off \
+             right here as you pick them up.",
+        )
+        .small()
+        .color(DIM),
+    );
+    ui.add_space(4.0);
+    ui.checkbox(hide_done, "Hide items I've already collected");
+    ui.add_space(4.0);
+
+    let render_group = |ui: &mut egui::Ui,
+                        title: &str,
+                        map_url: Option<&str>,
+                        items: &[(&str, &str, &'static str)],
+                        checklist_done: &mut HashMap<String, BTreeSet<String>>,
+                        clicked: &mut Option<String>| {
+        let remaining = items
+            .iter()
+            .filter(|(_, api, item)| {
+                !checklist_done
+                    .get(&format!("{}/{}", game.appid, api))
+                    .is_some_and(|d| d.contains(*item))
+            })
+            .count();
+        if *hide_done && remaining == 0 {
+            return;
+        }
+
+        ui.add_space(10.0);
+        ui.horizontal(|ui| {
+            ui.label(theme::display(title, 17.0));
+            ui.label(
+                egui::RichText::new(format!("{remaining} left"))
+                    .small()
+                    .color(if remaining > 0 { ORANGE } else { GREEN }),
+            );
+            if let Some(url) = map_url {
+                ui.hyperlink_to(
+                    egui::RichText::new("\u{1F5FA} map & area guide").small(),
+                    url,
+                );
+            }
+        });
+        ui.separator();
+
+        for (ach_name, api_name, item) in items {
+            let key = format!("{}/{}", game.appid, api_name);
+            let mut checked = checklist_done.get(&key).is_some_and(|d| d.contains(*item));
+            if *hide_done && checked {
+                continue;
+            }
+            ui.horizontal(|ui| {
+                let label = if checked {
+                    egui::RichText::new(*item).strikethrough().color(DIM)
+                } else {
+                    egui::RichText::new(*item)
+                };
+                if ui.checkbox(&mut checked, label).changed() {
+                    let done = checklist_done.entry(key.clone()).or_default();
+                    if checked {
+                        done.insert((*item).to_string());
+                    } else {
+                        done.remove(*item);
+                    }
+                }
+                if ui
+                    .link(egui::RichText::new(*ach_name).small().color(DIM))
+                    .on_hover_text("Open this achievement's guide")
+                    .clicked()
+                {
+                    *clicked = Some((*api_name).to_string());
+                }
+            });
+        }
+    };
+
+    for (i, items) in grouped.iter().enumerate() {
+        if items.is_empty() {
+            continue;
+        }
+        render_group(
+            ui,
+            all_areas[i].name,
+            Some(all_areas[i].map_url),
+            items,
+            checklist_done,
+            &mut clicked,
+        );
+    }
+    if !unrouted.is_empty() {
+        render_group(
+            ui,
+            "No fixed location / general steps",
+            None,
+            &unrouted,
+            checklist_done,
+            &mut clicked,
+        );
+    }
+
+    clicked
 }
 
 /// Everything permanently lockable this playthrough, deadlines up front.

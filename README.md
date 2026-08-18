@@ -14,6 +14,11 @@ Steam Web API and pairs every achievement with the help you need to finish it:
 - **Suggested next** — each game page surfaces the top locked achievements by global unlock
   rate, so you always know what to go do right now.
 - **Locations** — where you have to go for the multi-location collectathons.
+- **By Area (Dark Souls 1)** — the routing view: every item you still need, grouped by the
+  area you go to for it, pooled across all four collectathons at once. Standing in Anor Londo
+  shows the Silver Knight weapons, the illusory-wall chests, every boss-soul forge, and the
+  Darkmoon spells on one screen — tick them off in place, with a link to that area's map and
+  guide on the wiki.
 - **Resources** — hand-picked wiki checklists and guides per achievement, plus auto-generated
   YouTube / Google guide searches for every achievement in every game.
 - **Filters** — search, locked/unlocked, missable-only, and sorting by rarity, name, or most
