@@ -19,9 +19,10 @@ Steam Web API and pairs every achievement with the help you need to finish it:
   shows the Silver Knight weapons, the illusory-wall chests, every boss-soul forge, and the
   Darkmoon spells on one screen — tick them off in place, with a link to that area's map and
   guide on the wiki.
-- **Live world map** — Lordran drawn as a connected node map, with each area sized and lit by
-  how much you still have to collect there. Nodes shrink and go green as you tick items off.
-  Drawn by the app itself, so it works offline and ships no third-party artwork.
+- **Live world map** — Lordran drawn as a chart on aged paper: every area is its own shaded
+  region, carrying a badge of how much it still owes you, with the routes between them running
+  underneath. Regions fade back into the paper as you clear them. Drawn by the app itself, so
+  it works offline and ships no third-party artwork.
 - **A map for every area** — click any area to drop into its own board: the notable spots
   inside it (Anor Londo's rafters, the Giant Blacksmith, the illusory-wall chest room, the
   Darkmoon Tomb…) each carrying how much is still waiting there. Click a spot to narrow the

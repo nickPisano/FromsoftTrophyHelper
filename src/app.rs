@@ -1055,88 +1055,138 @@ fn world_map(ui: &mut egui::Ui, appid: u32, remaining: &[usize]) -> Option<usize
     }
 
     let (rect, response) = ui.allocate_exact_size(
-        egui::vec2(ui.available_width(), 420.0),
+        egui::vec2(ui.available_width(), 520.0),
         egui::Sense::click(),
     );
     let painter = ui.painter_at(rect);
-    painter.rect_filled(rect, 8.0, theme::MAP_BG);
+    painter.rect_filled(rect, 8.0, theme::MAP_PAPER);
     painter.rect_stroke(
         rect,
         8.0,
-        egui::Stroke::new(1.0, theme::MAP_BORDER),
+        egui::Stroke::new(1.0, theme::MAP_PAPER_EDGE),
         egui::StrokeKind::Inside,
     );
 
-    // Inset so the labels under the outermost nodes stay inside the panel.
-    let inner = rect.shrink2(egui::vec2(70.0, 26.0));
+    // Keep the chart square-ish and centred however wide the panel gets, so
+    // the regions never stretch into unrecognisable shapes.
+    let inner = {
+        let pad = 14.0;
+        let avail = rect.shrink(pad);
+        let side = avail.width().min(avail.height());
+        egui::Rect::from_center_size(avail.center(), egui::vec2(side, side))
+    };
     let at = |p: (f32, f32)| -> egui::Pos2 {
         egui::pos2(
             inner.left() + p.0 * inner.width(),
             inner.top() + p.1 * inner.height(),
         )
     };
+    let poly_of =
+        |area: &areas::Area| -> Vec<egui::Pos2> { area.shape.iter().copied().map(at).collect() };
 
+    // Routes first, so they read as corridors running behind the regions.
     for (a, b) in areas::links_for(appid) {
         let (Some(ia), Some(ib)) = (areas::index_of(appid, a), areas::index_of(appid, b)) else {
             continue;
         };
         painter.line_segment(
             [at(all[ia].pos), at(all[ib].pos)],
-            egui::Stroke::new(1.0, theme::MAP_EDGE),
+            egui::Stroke::new(1.4, theme::MAP_INK_SOFT.gamma_multiply(0.7)),
         );
     }
 
-    let busiest = remaining.iter().copied().max().unwrap_or(0).max(1);
-    let radius_of = |n: usize| -> f32 {
-        if n == 0 {
-            5.0
-        } else {
-            8.0 + 12.0 * (n as f32 / busiest as f32).sqrt()
-        }
-    };
-
-    // Hit-test a point against the nodes. Hover uses the pointer's resting
-    // position; a click uses the position the click actually happened at,
-    // which is the only one guaranteed to be set on the click frame.
-    let node_at = |p: egui::Pos2| -> Option<usize> {
-        let mut best: Option<(usize, f32)> = None;
-        for (i, area) in all.iter().enumerate() {
-            let d = at(area.pos).distance(p);
-            if d <= radius_of(remaining[i]) + 7.0 && best.is_none_or(|(_, bd)| d < bd) {
-                best = Some((i, d));
+    // Which region is the pointer over? Ray-cast, so odd shapes still work.
+    let inside = |area: &areas::Area, p: egui::Pos2| -> bool {
+        let pts = poly_of(area);
+        let mut hit = false;
+        let mut j = pts.len() - 1;
+        for i in 0..pts.len() {
+            let (a, b) = (pts[i], pts[j]);
+            if (a.y > p.y) != (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x {
+                hit = !hit;
             }
+            j = i;
         }
-        best.map(|(i, _)| i)
+        hit
     };
-    let hovered = response.hover_pos().and_then(node_at);
+    let region_at =
+        |p: egui::Pos2| -> Option<usize> { all.iter().position(|area| inside(area, p)) };
+    let hovered = response.hover_pos().and_then(region_at);
     if hovered.is_some() {
         ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::PointingHand);
     }
 
     for (i, area) in all.iter().enumerate() {
-        let c = at(area.pos);
         let left = remaining[i];
-        let r = radius_of(left);
-        painter.circle_filled(c, r, if left == 0 { theme::MAP_CLEAR } else { ORANGE });
-        if hovered == Some(i) {
-            painter.circle_stroke(c, r + 3.0, egui::Stroke::new(2.0, GOLD));
+        let (r, g, b) = area.tint;
+        let base = egui::Color32::from_rgb(r, g, b);
+        // Nothing left here? Let the region fade back into the paper.
+        let fill = if left == 0 {
+            base.gamma_multiply(0.45).blend(theme::MAP_PAPER)
+        } else if hovered == Some(i) {
+            base.gamma_multiply(1.15)
+        } else {
+            base
+        };
+        let edge = if hovered == Some(i) {
+            egui::Stroke::new(2.0, theme::MAP_INK)
+        } else {
+            egui::Stroke::new(1.0, theme::MAP_INK_SOFT)
+        };
+        painter.add(egui::Shape::convex_polygon(poly_of(area), fill, edge));
+    }
+
+    // Labels last, on top of every region, wrapped to fit the region they
+    // name — long names like "Northern Undead Asylum" would otherwise spill
+    // across their neighbours.
+    for (i, area) in all.iter().enumerate() {
+        let left = remaining[i];
+        let pts = poly_of(area);
+        let bbox = egui::Rect::from_points(&pts);
+        let ink = if left == 0 {
+            theme::MAP_INK_SOFT
+        } else {
+            theme::MAP_INK
+        };
+
+        // Shrink until the wrapped text fits the region's height too.
+        let wrap = (bbox.width() * 0.88).max(28.0);
+        let mut galley = None;
+        for size in [11.5_f32, 10.5, 9.5, 8.5] {
+            let g = painter.layout(
+                area.name.to_owned(),
+                egui::FontId::proportional(size),
+                ink,
+                wrap,
+            );
+            let room = if left > 0 {
+                bbox.height() * 0.82 - 16.0
+            } else {
+                bbox.height() * 0.88
+            };
+            galley = Some(g.clone());
+            if g.size().y <= room {
+                break;
+            }
         }
+        let galley = galley.expect("at least one size is laid out");
+
+        let c = at(area.pos);
+        let text_h = galley.size().y;
+        let block_h = text_h + if left > 0 { 20.0 } else { 0.0 };
+        let top = c.y - block_h / 2.0;
+        painter.galley(egui::pos2(c.x - galley.size().x / 2.0, top), galley, ink);
         if left > 0 {
+            let badge = egui::pos2(c.x, top + text_h + 10.0);
+            painter.circle_filled(badge, 9.0, theme::MAP_INK);
             painter.text(
-                c,
+                badge,
                 egui::Align2::CENTER_CENTER,
                 left.to_string(),
-                egui::FontId::proportional(11.0),
-                egui::Color32::from_rgb(24, 20, 15),
+                egui::FontId::proportional(10.0),
+                theme::MAP_PAPER,
             );
         }
-        painter.text(
-            c + egui::vec2(0.0, r + 10.0),
-            egui::Align2::CENTER_CENTER,
-            area.name,
-            egui::FontId::proportional(10.0),
-            if left == 0 { DIM } else { theme::PARCHMENT },
-        );
     }
 
     if let Some(i) = hovered {
@@ -1144,12 +1194,12 @@ fn world_map(ui: &mut egui::Ui, appid: u32, remaining: &[usize]) -> Option<usize
         response.clone().on_hover_text(if left == 0 {
             format!("{} — all clear", all[i].name)
         } else {
-            format!("{} — {left} left · click to focus", all[i].name)
+            format!("{} — {left} left · click to open its map", all[i].name)
         });
     }
 
     if response.clicked() {
-        response.interact_pointer_pos().and_then(node_at)
+        response.interact_pointer_pos().and_then(region_at)
     } else {
         None
     }
@@ -1242,7 +1292,7 @@ fn areas_view(
             }
             ui.label(
                 egui::RichText::new(
-                    "Bigger, brighter nodes have more left. Click an area to open its map.",
+                    "Each region is shaded by how much it still owes you. Click one to open its map.",
                 )
                 .small()
                 .color(DIM),
