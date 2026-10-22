@@ -19,6 +19,34 @@ pub struct Area {
     /// downward. Our own layout — it echoes how the world actually connects
     /// without reproducing anyone's artwork.
     pub pos: (f32, f32),
+    /// Notable spots inside the area, for the drilled-in area map. Ordered
+    /// most-specific first: the first spot whose keyword matches wins, so a
+    /// broad catch-all ("painted world") must come after the precise ones
+    /// ("annex", "undead dragon"). Items matching nothing are listed as
+    /// "Elsewhere in <area>" rather than guessed at.
+    pub spots: &'static [Spot],
+}
+
+pub struct Spot {
+    pub name: &'static str,
+    pub keywords: &'static [&'static str],
+    /// Position on the area map, normalised 0..1.
+    pub pos: (f32, f32),
+}
+
+/// Which spot inside `area` an item belongs to, by the same item-then-section
+/// keyword scheme [`resolve`] uses for areas.
+pub fn resolve_spot(area: &Area, item: &str, section: &str) -> Option<usize> {
+    let item = item.to_lowercase();
+    let section = section.to_lowercase();
+    for hay in [&item, &section] {
+        for (i, spot) in area.spots.iter().enumerate() {
+            if spot.keywords.iter().any(|k| hay.contains(*k)) {
+                return Some(i);
+            }
+        }
+    }
+    None
 }
 
 /// How the areas actually connect, by name so that reordering the table
@@ -60,6 +88,296 @@ static DS1_LINKS: &[(&str, &str)] = &[
     ("New Londo Ruins", "Valley of Drakes"),
     ("The Catacombs", "Tomb of the Giants"),
 ];
+
+// Spots inside each area. Positions are laid out to keep the cards clear of
+// each other and of the panel edges; they read as a diagram of the area, not
+// a surveyed floor plan.
+
+static SPOTS_ASYLUM: &[Spot] = &[Spot {
+    name: "Oscar's cell",
+    keywords: &["oscar"],
+    pos: (0.50, 0.50),
+}];
+
+static SPOTS_FIRELINK: &[Spot] = &[
+    Spot {
+        name: "Petrus of Thorolund",
+        keywords: &["petrus"],
+        pos: (0.22, 0.20),
+    },
+    Spot {
+        name: "Griggs of Vinheim",
+        keywords: &["griggs"],
+        pos: (0.74, 0.20),
+    },
+    Spot {
+        name: "Laurentius",
+        keywords: &["laurentius"],
+        pos: (0.24, 0.55),
+    },
+    Spot {
+        name: "Siegmeyer (stairs)",
+        keywords: &["siegmeyer"],
+        pos: (0.50, 0.85),
+    },
+];
+
+static SPOTS_UNDEAD_BURG: &[Spot] = &[Spot {
+    name: "Hellkite bridge",
+    keywords: &["hellkite", "undead burg bridge"],
+    pos: (0.50, 0.50),
+}];
+
+static SPOTS_UNDEAD_PARISH: &[Spot] = &[
+    Spot {
+        name: "Reah (church)",
+        keywords: &["reah"],
+        pos: (0.24, 0.26),
+    },
+    Spot {
+        name: "Sunlight Altar",
+        keywords: &["sunlight altar", "warrior of sunlight"],
+        pos: (0.74, 0.30),
+    },
+    Spot {
+        name: "Oswald (belfry)",
+        keywords: &["oswald"],
+        pos: (0.46, 0.74),
+    },
+];
+
+static SPOTS_DARKROOT_GARDEN: &[Spot] = &[
+    Spot {
+        name: "Giant Stone Knights",
+        keywords: &["giant stone knights"],
+        pos: (0.30, 0.34),
+    },
+    Spot {
+        name: "Sif's arena",
+        keywords: &["defeat sif"],
+        pos: (0.68, 0.68),
+    },
+];
+
+static SPOTS_DARKROOT_BASIN: &[Spot] = &[Spot {
+    name: "Dusk (Crystal Golem)",
+    keywords: &["dusk"],
+    pos: (0.50, 0.50),
+}];
+
+static SPOTS_DEPTHS: &[Spot] = &[
+    Spot {
+        name: "Channelers",
+        keywords: &["channeler"],
+        pos: (0.30, 0.32),
+    },
+    Spot {
+        name: "Gaping Dragon arena",
+        keywords: &["gaping dragon"],
+        pos: (0.68, 0.68),
+    },
+];
+
+static SPOTS_BLIGHTTOWN: &[Spot] = &[
+    Spot {
+        name: "Quelana (swamp)",
+        keywords: &["quelana"],
+        pos: (0.30, 0.66),
+    },
+    Spot {
+        name: "Swamp floor",
+        keywords: &["blighttown"],
+        pos: (0.68, 0.32),
+    },
+];
+
+static SPOTS_QUELAAGS: &[Spot] = &[
+    Spot {
+        name: "Eingyi (illusory wall)",
+        keywords: &["eingyi"],
+        pos: (0.30, 0.34),
+    },
+    Spot {
+        name: "Chaos Servant covenant",
+        keywords: &["chaos servant"],
+        pos: (0.68, 0.66),
+    },
+];
+
+static SPOTS_SENS: &[Spot] = &[Spot {
+    name: "Upper-level chest",
+    keywords: &["sen's fortress chest", "chest"],
+    pos: (0.50, 0.50),
+}];
+
+static SPOTS_ANOR_LONDO: &[Spot] = &[
+    Spot {
+        name: "Rafters & buttresses",
+        keywords: &["silver knight"],
+        pos: (0.18, 0.30),
+    },
+    Spot {
+        name: "Sentinel hall",
+        keywords: &["sentinels"],
+        pos: (0.50, 0.12),
+    },
+    Spot {
+        name: "Giant Blacksmith",
+        keywords: &["giant blacksmith"],
+        pos: (0.82, 0.30),
+    },
+    Spot {
+        name: "Broken window ledge",
+        keywords: &["broken window"],
+        pos: (0.50, 0.48),
+    },
+    Spot {
+        name: "By the painting",
+        keywords: &["next to the painting"],
+        pos: (0.18, 0.68),
+    },
+    Spot {
+        name: "Illusory-wall chest room",
+        keywords: &["illusory-wall"],
+        pos: (0.82, 0.68),
+    },
+    Spot {
+        name: "Darkmoon Tomb",
+        keywords: &["darkmoon tomb", "blade of the darkmoon"],
+        pos: (0.50, 0.88),
+    },
+];
+
+static SPOTS_PAINTED_WORLD: &[Spot] = &[
+    Spot {
+        name: "Priscilla's tower",
+        keywords: &["priscilla"],
+        pos: (0.50, 0.16),
+    },
+    Spot {
+        name: "Annex (Annex Key door)",
+        keywords: &["annex"],
+        pos: (0.20, 0.46),
+    },
+    Spot {
+        name: "By the Undead Dragon",
+        keywords: &["undead dragon"],
+        pos: (0.80, 0.46),
+    },
+    Spot {
+        name: "Township grounds",
+        keywords: &["painted world"],
+        pos: (0.50, 0.80),
+    },
+];
+
+static SPOTS_CATACOMBS: &[Spot] = &[
+    Spot {
+        name: "Gravelord coffin",
+        keywords: &["gravelord"],
+        pos: (0.32, 0.34),
+    },
+    Spot {
+        name: "Catacombs treasure",
+        keywords: &["catacombs"],
+        pos: (0.68, 0.66),
+    },
+];
+
+static SPOTS_TOMB: &[Spot] = &[
+    Spot {
+        name: "Patches",
+        keywords: &["patches"],
+        pos: (0.24, 0.26),
+    },
+    Spot {
+        name: "Paladin Leeroy",
+        keywords: &["leeroy"],
+        pos: (0.74, 0.28),
+    },
+    Spot {
+        name: "Reah's rescue",
+        keywords: &["reah"],
+        pos: (0.24, 0.70),
+    },
+    Spot {
+        name: "Tomb floor",
+        keywords: &["tomb of the giants"],
+        pos: (0.74, 0.72),
+    },
+];
+
+static SPOTS_NEW_LONDO: &[Spot] = &[
+    Spot {
+        name: "Ingward's tower",
+        keywords: &["ingward", "key to the seal"],
+        pos: (0.24, 0.28),
+    },
+    Spot {
+        name: "Kaathe & the Darkwraiths",
+        keywords: &["kaathe", "darkwraith"],
+        pos: (0.76, 0.34),
+    },
+    Spot {
+        name: "The Abyss (Four Kings)",
+        keywords: &["abyss", "four kings"],
+        pos: (0.50, 0.76),
+    },
+];
+
+static SPOTS_VALLEY_OF_DRAKES: &[Spot] = &[Spot {
+    name: "By the Undead Dragon",
+    keywords: &["undead dragon"],
+    pos: (0.50, 0.50),
+}];
+
+static SPOTS_ASH_LAKE: &[Spot] = &[
+    Spot {
+        name: "The Stone Dragon",
+        keywords: &["stone dragon"],
+        pos: (0.32, 0.36),
+    },
+    Spot {
+        name: "Ash Lake shore",
+        keywords: &["ash lake"],
+        pos: (0.68, 0.66),
+    },
+];
+
+static SPOTS_DUKES_ARCHIVES: &[Spot] = &[
+    Spot {
+        name: "Seath's arena",
+        keywords: &["seath"],
+        pos: (0.74, 0.26),
+    },
+    Spot {
+        name: "Logan's cell",
+        keywords: &["logan"],
+        pos: (0.26, 0.28),
+    },
+    Spot {
+        name: "Pisaca cages",
+        keywords: &["pisaca"],
+        pos: (0.26, 0.70),
+    },
+    Spot {
+        name: "Archives interior",
+        keywords: &["archives"],
+        pos: (0.74, 0.72),
+    },
+];
+
+static SPOTS_LOST_IZALITH: &[Spot] = &[Spot {
+    name: "Izalith ruins",
+    keywords: &["lost izalith"],
+    pos: (0.50, 0.50),
+}];
+
+static SPOTS_KILN: &[Spot] = &[Spot {
+    name: "Respawning Black Knights",
+    keywords: &["black knight"],
+    pos: (0.50, 0.50),
+}];
 
 /// Areas for a game, in rough progression order. Empty when the game has no
 /// area data yet (only Dark Souls 1 is mapped so far).
@@ -109,6 +427,7 @@ static DS1_AREAS: &[Area] = &[
         weak: &["oscar"],
         map_url: "https://darksouls.wiki.fextralife.com/Northern+Undead+Asylum",
         pos: (0.07, 0.09),
+        spots: SPOTS_ASYLUM,
     },
     Area {
         name: "Firelink Shrine",
@@ -116,20 +435,23 @@ static DS1_AREAS: &[Area] = &[
         weak: &["griggs", "laurentius", "petrus", "siegmeyer", "logan"],
         map_url: "https://darksouls.wiki.fextralife.com/Firelink+Shrine",
         pos: (0.53, 0.52),
+        spots: SPOTS_FIRELINK,
     },
     Area {
         name: "Undead Burg",
         strong: &["undead burg"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Undead+Burg",
-        pos: (0.40, 0.45),
+        pos: (0.42, 0.48),
+        spots: SPOTS_UNDEAD_BURG,
     },
     Area {
         name: "Undead Parish",
         strong: &["undead parish", "sunlight altar"],
         weak: &["reah", "oswald", "warrior of sunlight"],
         map_url: "https://darksouls.wiki.fextralife.com/Undead+Parish",
-        pos: (0.34, 0.35),
+        pos: (0.32, 0.34),
+        spots: SPOTS_UNDEAD_PARISH,
     },
     Area {
         name: "Darkroot Garden",
@@ -139,27 +461,31 @@ static DS1_AREAS: &[Area] = &[
         weak: &["giant stone knights", "shiva"],
         map_url: "https://darksouls.wiki.fextralife.com/Darkroot+Garden",
         pos: (0.17, 0.30),
+        spots: SPOTS_DARKROOT_GARDEN,
     },
     Area {
         name: "Darkroot Basin",
         strong: &["darkroot basin"],
         weak: &["dusk"],
         map_url: "https://darksouls.wiki.fextralife.com/Darkroot+Basin",
-        pos: (0.09, 0.41),
+        pos: (0.07, 0.44),
+        spots: SPOTS_DARKROOT_BASIN,
     },
     Area {
         name: "The Depths",
         strong: &["depths", "gaping dragon"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Depths",
-        pos: (0.39, 0.59),
+        pos: (0.34, 0.61),
+        spots: SPOTS_DEPTHS,
     },
     Area {
         name: "Blighttown",
         strong: &["blighttown"],
         weak: &["quelana"],
         map_url: "https://darksouls.wiki.fextralife.com/Blighttown",
-        pos: (0.33, 0.72),
+        pos: (0.28, 0.77),
+        spots: SPOTS_BLIGHTTOWN,
     },
     Area {
         name: "Quelaag's Domain",
@@ -167,13 +493,15 @@ static DS1_AREAS: &[Area] = &[
         weak: &["eingyi", "chaos servant"],
         map_url: "https://darksouls.wiki.fextralife.com/Quelaag's+Domain",
         pos: (0.47, 0.80),
+        spots: SPOTS_QUELAAGS,
     },
     Area {
         name: "Sen's Fortress",
         strong: &["sen's fortress"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Sen's+Fortress",
-        pos: (0.50, 0.30),
+        pos: (0.50, 0.34),
+        spots: SPOTS_SENS,
     },
     Area {
         name: "Anor Londo",
@@ -188,6 +516,7 @@ static DS1_AREAS: &[Area] = &[
         ],
         map_url: "https://darksouls.wiki.fextralife.com/Anor+Londo",
         pos: (0.50, 0.18),
+        spots: SPOTS_ANOR_LONDO,
     },
     Area {
         name: "Painted World of Ariamis",
@@ -195,6 +524,7 @@ static DS1_AREAS: &[Area] = &[
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Painted+World+of+Ariamis",
         pos: (0.30, 0.11),
+        spots: SPOTS_PAINTED_WORLD,
     },
     Area {
         name: "The Catacombs",
@@ -202,6 +532,7 @@ static DS1_AREAS: &[Area] = &[
         weak: &["gravelord"],
         map_url: "https://darksouls.wiki.fextralife.com/The+Catacombs",
         pos: (0.74, 0.55),
+        spots: SPOTS_CATACOMBS,
     },
     Area {
         name: "Tomb of the Giants",
@@ -209,6 +540,7 @@ static DS1_AREAS: &[Area] = &[
         weak: &["patches"],
         map_url: "https://darksouls.wiki.fextralife.com/Tomb+of+Giants",
         pos: (0.86, 0.67),
+        spots: SPOTS_TOMB,
     },
     Area {
         name: "New Londo Ruins",
@@ -216,13 +548,15 @@ static DS1_AREAS: &[Area] = &[
         weak: &["ingward", "darkwraith", "four kings", "kaathe"],
         map_url: "https://darksouls.wiki.fextralife.com/New+Londo+Ruins",
         pos: (0.63, 0.65),
+        spots: SPOTS_NEW_LONDO,
     },
     Area {
         name: "Valley of Drakes",
         strong: &["valley of drakes"],
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Valley+of+Drakes",
-        pos: (0.25, 0.60),
+        pos: (0.16, 0.62),
+        spots: SPOTS_VALLEY_OF_DRAKES,
     },
     Area {
         name: "The Great Hollow",
@@ -230,6 +564,7 @@ static DS1_AREAS: &[Area] = &[
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/The+Great+Hollow",
         pos: (0.17, 0.84),
+        spots: &[],
     },
     Area {
         name: "Ash Lake",
@@ -237,6 +572,7 @@ static DS1_AREAS: &[Area] = &[
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Ash+Lake",
         pos: (0.09, 0.94),
+        spots: SPOTS_ASH_LAKE,
     },
     Area {
         name: "The Duke's Archives",
@@ -244,6 +580,7 @@ static DS1_AREAS: &[Area] = &[
         weak: &["pisaca"],
         map_url: "https://darksouls.wiki.fextralife.com/The+Duke's+Archives",
         pos: (0.74, 0.14),
+        spots: SPOTS_DUKES_ARCHIVES,
     },
     Area {
         name: "Crystal Cave",
@@ -251,6 +588,7 @@ static DS1_AREAS: &[Area] = &[
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Crystal+Cave",
         pos: (0.88, 0.07),
+        spots: &[],
     },
     Area {
         name: "Demon Ruins",
@@ -258,6 +596,7 @@ static DS1_AREAS: &[Area] = &[
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Demon+Ruins",
         pos: (0.58, 0.88),
+        spots: &[],
     },
     Area {
         name: "Lost Izalith",
@@ -265,13 +604,15 @@ static DS1_AREAS: &[Area] = &[
         weak: &[],
         map_url: "https://darksouls.wiki.fextralife.com/Lost+Izalith",
         pos: (0.70, 0.94),
+        spots: SPOTS_LOST_IZALITH,
     },
     Area {
         name: "Kiln of the First Flame",
         strong: &["kiln"],
         weak: &["black knight"],
         map_url: "https://darksouls.wiki.fextralife.com/Kiln+of+the+First+Flame",
-        pos: (0.50, 0.03),
+        pos: (0.50, 0.02),
+        spots: SPOTS_KILN,
     },
 ];
 
@@ -470,6 +811,162 @@ mod tests {
                 a.name
             );
             assert!(!a.strong.is_empty(), "{} has no strong keywords", a.name);
+        }
+    }
+
+    fn spot_of(area_name: &str, item: &str, section: &str) -> &'static str {
+        let area = &areas_for(DS1)[super::index_of(DS1, area_name).unwrap()];
+        super::resolve_spot(area, item, section)
+            .map(|s| area.spots[s].name)
+            .unwrap_or("<elsewhere>")
+    }
+
+    #[test]
+    fn spots_resolve_specific_before_general() {
+        // The precise spot must beat the area-wide catch-all in the same text.
+        assert_eq!(
+            spot_of(
+                "Anor Londo",
+                "Havel's Greatshield (Anor Londo, illusory-wall chest)",
+                ""
+            ),
+            "Illusory-wall chest room"
+        );
+        assert_eq!(
+            spot_of(
+                "Painted World of Ariamis",
+                "Velka's Rapier (Painted World, behind the Annex Key door)",
+                ""
+            ),
+            "Annex (Annex Key door)"
+        );
+        assert_eq!(
+            spot_of(
+                "Tomb of the Giants",
+                "Replenishment (Reah, at the Tomb of the Giants)",
+                ""
+            ),
+            "Reah's rescue"
+        );
+        // Hollow Logan is fought in Seath's arena, not his cell.
+        assert_eq!(
+            spot_of(
+                "The Duke's Archives",
+                "White Dragon Breath (defeat hollow Logan in Seath's arena)",
+                ""
+            ),
+            "Seath's arena"
+        );
+        assert_eq!(
+            spot_of(
+                "The Duke's Archives",
+                "Homing Crystal Soulmass (Logan, Archives only)",
+                ""
+            ),
+            "Logan's cell"
+        );
+        // Boss souls carry no place of their own; the section header puts
+        // them at the smith who forges them.
+        assert_eq!(
+            spot_of(
+                "Anor Londo",
+                "Chaos Blade (Quelaag soul + katana)",
+                "Boss-soul weapons (Giant Blacksmith)"
+            ),
+            "Giant Blacksmith"
+        );
+    }
+
+    #[test]
+    fn every_spot_claims_at_least_one_item() {
+        for area in areas_for(DS1) {
+            let mut claimed = vec![false; area.spots.len()];
+            for g in crate::guides::all_guides() {
+                if g.appid != DS1 {
+                    continue;
+                }
+                let mut section = "";
+                for item in g.checklist {
+                    if let Some(h) = item.strip_prefix("## ") {
+                        section = h;
+                        continue;
+                    }
+                    if resolve(DS1, item, section) != super::index_of(DS1, area.name) {
+                        continue;
+                    }
+                    if let Some(s) = super::resolve_spot(area, item, section) {
+                        claimed[s] = true;
+                    }
+                }
+            }
+            for (s, got) in claimed.iter().enumerate() {
+                assert!(
+                    *got,
+                    "{} / {} is a dead spot — no item resolves to it",
+                    area.name, area.spots[s].name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn spot_cards_cannot_collide() {
+        for area in areas_for(DS1) {
+            for (i, a) in area.spots.iter().enumerate() {
+                assert!(
+                    (0.0..=1.0).contains(&a.pos.0) && (0.0..=1.0).contains(&a.pos.1),
+                    "{} / {} sits outside the panel",
+                    area.name,
+                    a.name
+                );
+                for b in &area.spots[i + 1..] {
+                    let (dx, dy) = ((a.pos.0 - b.pos.0).abs(), (a.pos.1 - b.pos.1).abs());
+                    // Cards are wide and short: same row needs real horizontal gap.
+                    assert!(
+                        dy >= 0.14 || dx > 0.25,
+                        "{}: '{}' and '{}' would overlap",
+                        area.name,
+                        a.name,
+                        b.name
+                    );
+                }
+            }
+        }
+    }
+
+    /// The world map prints each area's name just beneath its node, so a
+    /// node sitting close below a neighbour can land on top of that label —
+    /// which is exactly what Sen's Fortress did to Anor Londo's.
+    ///
+    /// Modelled against the real geometry: a ~764x368 drawing area, a 10px
+    /// proportional label centred under its node, and nodes up to radius 20.
+    #[test]
+    fn world_map_labels_are_not_covered() {
+        const W: f32 = 764.0;
+        const H: f32 = 368.0;
+        const CHAR_W: f32 = 5.0;
+        const MAX_R: f32 = 20.0;
+        const LABEL_DROP: f32 = 36.0; // node centre -> bottom of its label
+
+        let areas = areas_for(DS1);
+        for (i, a) in areas.iter().enumerate() {
+            for b in &areas[i + 1..] {
+                // The higher node owns the label that could get covered.
+                let (high, low) = if a.pos.1 < b.pos.1 { (a, b) } else { (b, a) };
+                let label_half = high.name.len() as f32 * CHAR_W / 2.0;
+                let dx = (high.pos.0 - low.pos.0).abs() * W;
+                if dx >= label_half + MAX_R {
+                    continue; // clear of each other horizontally
+                }
+                let gap = (low.pos.1 - high.pos.1) * H - MAX_R;
+                assert!(
+                    gap >= LABEL_DROP,
+                    "'{}' label would be covered by '{}' (horizontal overlap, only \
+                     {gap:.1}px of vertical room, needs {LABEL_DROP})",
+                    high.name,
+                    low.name
+                );
+            }
         }
     }
 }

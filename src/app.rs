@@ -130,6 +130,8 @@ pub struct App {
     areas_hide_done: bool,
     /// By Area view: restrict the list to one area picked on the map.
     areas_focus: Option<usize>,
+    /// By Area view: narrow further to one spot inside that area.
+    areas_spot_focus: Option<usize>,
     /// Free-text personal notes, keyed by "appid/api_name". Persisted.
     notes: HashMap<String, String>,
 
@@ -200,6 +202,7 @@ impl App {
             checklist_filter: String::new(),
             areas_hide_done: true,
             areas_focus: None,
+            areas_spot_focus: None,
             notes,
             search: String::new(),
             status_filter: StatusFilter::All,
@@ -845,6 +848,7 @@ impl App {
                                 &mut self.checklist_done,
                                 &mut self.areas_hide_done,
                                 &mut self.areas_focus,
+                                &mut self.areas_spot_focus,
                             );
                         }
                         None => {
@@ -902,6 +906,141 @@ impl App {
     }
 }
 
+/// One outstanding checklist item, with enough context to route it to an
+/// area and a spot, tick it, and jump to its achievement.
+struct RouteItem<'a> {
+    ach: &'a str,
+    api: &'a str,
+    item: &'static str,
+    section: &'static str,
+}
+
+fn item_done(done: &HashMap<String, BTreeSet<String>>, appid: u32, api: &str, item: &str) -> bool {
+    done.get(&format!("{appid}/{api}"))
+        .is_some_and(|d| d.contains(item))
+}
+
+/// One area drawn as a board of its notable spots, each card carrying how
+/// much is still waiting there. Spots with nothing in them are left out, so
+/// the board stays stable as you tick things off. Returns a clicked spot.
+fn area_map(
+    ui: &mut egui::Ui,
+    appid: u32,
+    area: &areas::Area,
+    items: &[RouteItem],
+    checklist_done: &HashMap<String, BTreeSet<String>>,
+    spot_focus: Option<usize>,
+) -> Option<usize> {
+    let mut total = vec![0usize; area.spots.len()];
+    let mut left = vec![0usize; area.spots.len()];
+    for it in items {
+        if let Some(s) = areas::resolve_spot(area, it.item, it.section) {
+            total[s] += 1;
+            if !item_done(checklist_done, appid, it.api, it.item) {
+                left[s] += 1;
+            }
+        }
+    }
+    if total.iter().all(|t| *t == 0) {
+        return None;
+    }
+
+    const CARD: egui::Vec2 = egui::vec2(176.0, 34.0);
+    let (rect, response) = ui.allocate_exact_size(
+        egui::vec2(ui.available_width(), 320.0),
+        egui::Sense::click(),
+    );
+    let painter = ui.painter_at(rect);
+    painter.rect_filled(rect, 8.0, theme::MAP_BG);
+    painter.rect_stroke(
+        rect,
+        8.0,
+        egui::Stroke::new(1.0, theme::MAP_BORDER),
+        egui::StrokeKind::Inside,
+    );
+
+    // Keep every card fully inside the panel.
+    let inner = rect.shrink2(CARD / 2.0 + egui::vec2(12.0, 12.0));
+    let card_at = |p: (f32, f32)| -> egui::Rect {
+        egui::Rect::from_center_size(
+            egui::pos2(
+                inner.left() + p.0 * inner.width(),
+                inner.top() + p.1 * inner.height(),
+            ),
+            CARD,
+        )
+    };
+
+    let card_hit = |p: egui::Pos2| -> Option<usize> {
+        area.spots
+            .iter()
+            .enumerate()
+            .find(|(s, spot)| total[*s] > 0 && card_at(spot.pos).contains(p))
+            .map(|(s, _)| s)
+    };
+    let hovered = response.hover_pos().and_then(card_hit);
+    if hovered.is_some() {
+        ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::PointingHand);
+    }
+
+    for (s, spot) in area.spots.iter().enumerate() {
+        if total[s] == 0 {
+            continue;
+        }
+        let card = card_at(spot.pos);
+        let clear = left[s] == 0;
+        painter.rect_filled(
+            card,
+            6.0,
+            if clear {
+                theme::MAP_CARD_CLEAR
+            } else {
+                theme::MAP_CARD
+            },
+        );
+        let edge = if spot_focus == Some(s) || hovered == Some(s) {
+            egui::Stroke::new(2.0, GOLD)
+        } else {
+            egui::Stroke::new(1.0, theme::MAP_BORDER)
+        };
+        painter.rect_stroke(card, 6.0, edge, egui::StrokeKind::Inside);
+
+        painter.text(
+            egui::pos2(card.left() + 12.0, card.center().y),
+            egui::Align2::LEFT_CENTER,
+            spot.name,
+            egui::FontId::proportional(11.5),
+            if clear { DIM } else { theme::PARCHMENT },
+        );
+        painter.text(
+            egui::pos2(card.right() - 12.0, card.center().y),
+            egui::Align2::RIGHT_CENTER,
+            if clear {
+                "\u{2714}".to_string()
+            } else {
+                left[s].to_string()
+            },
+            egui::FontId::proportional(12.0),
+            if clear { GREEN } else { ORANGE },
+        );
+    }
+
+    if let Some(s) = hovered {
+        let (l, t) = (left[s], total[s]);
+        response.clone().on_hover_text(if l == 0 {
+            format!("{} — all {t} collected", area.spots[s].name)
+        } else {
+            format!("{} — {l} of {t} left · click to focus", area.spots[s].name)
+        });
+    }
+
+    if response.clicked() {
+        response.interact_pointer_pos().and_then(card_hit)
+    } else {
+        None
+    }
+}
+
 /// The world drawn as a live node map: each area's node grows and glows with
 /// how much you still need there, and the edges are how the areas actually
 /// connect. Returns a clicked area index.
@@ -909,23 +1048,24 @@ impl App {
 /// Drawn with egui's painter rather than shipping an image — the layout is
 /// ours, so there's no third-party artwork involved, and unlike a static map
 /// it updates as you tick items off.
-fn world_map(
-    ui: &mut egui::Ui,
-    appid: u32,
-    remaining: &[usize],
-    focus: Option<usize>,
-) -> Option<usize> {
+fn world_map(ui: &mut egui::Ui, appid: u32, remaining: &[usize]) -> Option<usize> {
     let all = areas::areas_for(appid);
     if all.is_empty() || remaining.len() != all.len() {
         return None;
     }
 
     let (rect, response) = ui.allocate_exact_size(
-        egui::vec2(ui.available_width(), 360.0),
+        egui::vec2(ui.available_width(), 420.0),
         egui::Sense::click(),
     );
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, 8.0, theme::MAP_BG);
+    painter.rect_stroke(
+        rect,
+        8.0,
+        egui::Stroke::new(1.0, theme::MAP_BORDER),
+        egui::StrokeKind::Inside,
+    );
 
     // Inset so the labels under the outermost nodes stay inside the panel.
     let inner = rect.shrink2(egui::vec2(70.0, 26.0));
@@ -955,8 +1095,10 @@ fn world_map(
         }
     };
 
-    let mut hovered = None;
-    if let Some(p) = response.hover_pos() {
+    // Hit-test a point against the nodes. Hover uses the pointer's resting
+    // position; a click uses the position the click actually happened at,
+    // which is the only one guaranteed to be set on the click frame.
+    let node_at = |p: egui::Pos2| -> Option<usize> {
         let mut best: Option<(usize, f32)> = None;
         for (i, area) in all.iter().enumerate() {
             let d = at(area.pos).distance(p);
@@ -964,8 +1106,9 @@ fn world_map(
                 best = Some((i, d));
             }
         }
-        hovered = best.map(|(i, _)| i);
-    }
+        best.map(|(i, _)| i)
+    };
+    let hovered = response.hover_pos().and_then(node_at);
     if hovered.is_some() {
         ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::PointingHand);
     }
@@ -975,7 +1118,7 @@ fn world_map(
         let left = remaining[i];
         let r = radius_of(left);
         painter.circle_filled(c, r, if left == 0 { theme::MAP_CLEAR } else { ORANGE });
-        if focus == Some(i) || hovered == Some(i) {
+        if hovered == Some(i) {
             painter.circle_stroke(c, r + 3.0, egui::Stroke::new(2.0, GOLD));
         }
         if left > 0 {
@@ -1005,7 +1148,11 @@ fn world_map(
         });
     }
 
-    if response.clicked() { hovered } else { None }
+    if response.clicked() {
+        response.interact_pointer_pos().and_then(node_at)
+    } else {
+        None
+    }
 }
 
 /// Every outstanding checklist item routed to the area you'll find it in —
@@ -1017,13 +1164,14 @@ fn areas_view(
     checklist_done: &mut HashMap<String, BTreeSet<String>>,
     hide_done: &mut bool,
     focus: &mut Option<usize>,
+    spot_focus: &mut Option<usize>,
 ) -> Option<String> {
     let mut clicked = None;
     let all_areas = areas::areas_for(game.appid);
 
-    // (achievement name, api_name, item text) bucketed per area.
-    let mut grouped: Vec<Vec<(&str, &str, &'static str)>> = vec![Vec::new(); all_areas.len()];
-    let mut unrouted: Vec<(&str, &str, &'static str)> = Vec::new();
+    let mut grouped: Vec<Vec<RouteItem>> = Vec::new();
+    grouped.resize_with(all_areas.len(), Vec::new);
+    let mut unrouted: Vec<RouteItem> = Vec::new();
 
     for row in rows {
         // An achievement you already earned has nothing left to route.
@@ -1039,7 +1187,12 @@ fn areas_view(
                 section = heading;
                 continue;
             }
-            let entry = (row.name.as_str(), row.api_name.as_str(), *item);
+            let entry = RouteItem {
+                ach: row.name.as_str(),
+                api: row.api_name.as_str(),
+                item,
+                section,
+            };
             match areas::resolve(game.appid, item, section) {
                 Some(i) => grouped[i].push(entry),
                 None => unrouted.push(entry),
@@ -1070,63 +1223,95 @@ fn areas_view(
     ui.add_space(4.0);
     ui.checkbox(hide_done, "Hide items I've already collected");
 
-    // Live per-area counts drive both the map and the group headers.
     let remaining: Vec<usize> = grouped
         .iter()
         .map(|items| {
             items
                 .iter()
-                .filter(|(_, api, item)| {
-                    !checklist_done
-                        .get(&format!("{}/{}", game.appid, api))
-                        .is_some_and(|d| d.contains(*item))
-                })
+                .filter(|it| !item_done(checklist_done, game.appid, it.api, it.item))
                 .count()
         })
         .collect();
 
     ui.add_space(6.0);
-    if let Some(i) = world_map(ui, game.appid, &remaining, *focus) {
-        // Clicking the focused area again clears the filter.
-        *focus = if *focus == Some(i) { None } else { Some(i) };
-    }
-    ui.horizontal(|ui| {
-        if let Some(i) = *focus {
-            ui.label(
-                egui::RichText::new(format!(
-                    "Showing {} only",
-                    areas::areas_for(game.appid)[i].name
-                ))
-                .color(GOLD),
-            );
-            if ui.small_button("Show all areas").clicked() {
-                *focus = None;
+    match *focus {
+        None => {
+            if let Some(i) = world_map(ui, game.appid, &remaining) {
+                *focus = Some(i);
+                *spot_focus = None;
             }
-        } else {
             ui.label(
                 egui::RichText::new(
-                    "Bigger, brighter nodes have more left. Click one to focus the list below.",
+                    "Bigger, brighter nodes have more left. Click an area to open its map.",
                 )
                 .small()
                 .color(DIM),
             );
         }
-    });
+        Some(i) => {
+            let area = &all_areas[i];
+            ui.horizontal(|ui| {
+                if ui.button("\u{2190} World map").clicked() {
+                    *focus = None;
+                    *spot_focus = None;
+                }
+                ui.label(theme::display(area.name, 18.0));
+                ui.label(
+                    egui::RichText::new(format!("{} left", remaining[i]))
+                        .small()
+                        .color(if remaining[i] > 0 { ORANGE } else { GREEN }),
+                );
+                ui.hyperlink_to(
+                    egui::RichText::new("\u{1F5FA} area guide & map").small(),
+                    area.map_url,
+                );
+            });
+            ui.add_space(4.0);
+            if let Some(s) = area_map(
+                ui,
+                game.appid,
+                area,
+                &grouped[i],
+                checklist_done,
+                *spot_focus,
+            ) {
+                // Clicking the focused spot again clears the filter.
+                *spot_focus = if *spot_focus == Some(s) {
+                    None
+                } else {
+                    Some(s)
+                };
+            }
+            ui.horizontal(|ui| {
+                if let Some(s) = *spot_focus {
+                    ui.label(
+                        egui::RichText::new(format!("Showing {} only", area.spots[s].name))
+                            .color(GOLD),
+                    );
+                    if ui.small_button("Show whole area").clicked() {
+                        *spot_focus = None;
+                    }
+                } else {
+                    ui.label(
+                        egui::RichText::new("Click a spot to narrow the list below to it.")
+                            .small()
+                            .color(DIM),
+                    );
+                }
+            });
+        }
+    }
     ui.add_space(4.0);
 
     let render_group = |ui: &mut egui::Ui,
                         title: &str,
                         map_url: Option<&str>,
-                        items: &[(&str, &str, &'static str)],
+                        items: &[&RouteItem],
                         checklist_done: &mut HashMap<String, BTreeSet<String>>,
                         clicked: &mut Option<String>| {
         let remaining = items
             .iter()
-            .filter(|(_, api, item)| {
-                !checklist_done
-                    .get(&format!("{}/{}", game.appid, api))
-                    .is_some_and(|d| d.contains(*item))
-            })
+            .filter(|it| !item_done(checklist_done, game.appid, it.api, it.item))
             .count();
         if *hide_done && remaining == 0 {
             return;
@@ -1149,59 +1334,104 @@ fn areas_view(
         });
         ui.separator();
 
-        for (ach_name, api_name, item) in items {
-            let key = format!("{}/{}", game.appid, api_name);
-            let mut checked = checklist_done.get(&key).is_some_and(|d| d.contains(*item));
+        for it in items {
+            let key = format!("{}/{}", game.appid, it.api);
+            let mut checked = checklist_done
+                .get(&key)
+                .is_some_and(|d| d.contains(it.item));
             if *hide_done && checked {
                 continue;
             }
             ui.horizontal(|ui| {
                 let label = if checked {
-                    egui::RichText::new(*item).strikethrough().color(DIM)
+                    egui::RichText::new(it.item).strikethrough().color(DIM)
                 } else {
-                    egui::RichText::new(*item)
+                    egui::RichText::new(it.item)
                 };
                 if ui.checkbox(&mut checked, label).changed() {
                     let done = checklist_done.entry(key.clone()).or_default();
                     if checked {
-                        done.insert((*item).to_string());
+                        done.insert(it.item.to_string());
                     } else {
-                        done.remove(*item);
+                        done.remove(it.item);
                     }
                 }
                 if ui
-                    .link(egui::RichText::new(*ach_name).small().color(DIM))
+                    .link(egui::RichText::new(it.ach).small().color(DIM))
                     .on_hover_text("Open this achievement's guide")
                     .clicked()
                 {
-                    *clicked = Some((*api_name).to_string());
+                    *clicked = Some(it.api.to_string());
                 }
             });
         }
     };
 
-    for (i, items) in grouped.iter().enumerate() {
-        if items.is_empty() || focus.is_some_and(|f| f != i) {
-            continue;
+    match *focus {
+        // Drilled into an area: mirror the map and list spot by spot.
+        Some(i) => {
+            let area = &all_areas[i];
+            let mut by_spot: Vec<Vec<&RouteItem>> = Vec::new();
+            by_spot.resize_with(area.spots.len(), Vec::new);
+            let mut elsewhere: Vec<&RouteItem> = Vec::new();
+            for it in &grouped[i] {
+                match areas::resolve_spot(area, it.item, it.section) {
+                    Some(s) => by_spot[s].push(it),
+                    None => elsewhere.push(it),
+                }
+            }
+            for (s, items) in by_spot.iter().enumerate() {
+                if items.is_empty() || spot_focus.is_some_and(|f| f != s) {
+                    continue;
+                }
+                render_group(
+                    ui,
+                    area.spots[s].name,
+                    None,
+                    items,
+                    checklist_done,
+                    &mut clicked,
+                );
+            }
+            if !elsewhere.is_empty() && spot_focus.is_none() {
+                render_group(
+                    ui,
+                    &format!("Elsewhere in {}", area.name),
+                    None,
+                    &elsewhere,
+                    checklist_done,
+                    &mut clicked,
+                );
+            }
         }
-        render_group(
-            ui,
-            all_areas[i].name,
-            Some(all_areas[i].map_url),
-            items,
-            checklist_done,
-            &mut clicked,
-        );
-    }
-    if !unrouted.is_empty() && focus.is_none() {
-        render_group(
-            ui,
-            "No fixed location / general steps",
-            None,
-            &unrouted,
-            checklist_done,
-            &mut clicked,
-        );
+        // World view: one group per area.
+        None => {
+            for (i, items) in grouped.iter().enumerate() {
+                if items.is_empty() {
+                    continue;
+                }
+                let refs: Vec<&RouteItem> = items.iter().collect();
+                render_group(
+                    ui,
+                    all_areas[i].name,
+                    Some(all_areas[i].map_url),
+                    &refs,
+                    checklist_done,
+                    &mut clicked,
+                );
+            }
+            if !unrouted.is_empty() {
+                let refs: Vec<&RouteItem> = unrouted.iter().collect();
+                render_group(
+                    ui,
+                    "No fixed location / general steps",
+                    None,
+                    &refs,
+                    checklist_done,
+                    &mut clicked,
+                );
+            }
+        }
     }
 
     clicked

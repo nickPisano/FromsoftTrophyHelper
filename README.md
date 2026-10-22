@@ -20,9 +20,12 @@ Steam Web API and pairs every achievement with the help you need to finish it:
   Darkmoon spells on one screen — tick them off in place, with a link to that area's map and
   guide on the wiki.
 - **Live world map** — Lordran drawn as a connected node map, with each area sized and lit by
-  how much you still have to collect there. Click an area to focus the list on it; nodes shrink
-  and go green as you tick items off. Drawn by the app itself, so it works offline and ships no
-  third-party artwork.
+  how much you still have to collect there. Nodes shrink and go green as you tick items off.
+  Drawn by the app itself, so it works offline and ships no third-party artwork.
+- **A map for every area** — click any area to drop into its own board: the notable spots
+  inside it (Anor Londo's rafters, the Giant Blacksmith, the illusory-wall chest room, the
+  Darkmoon Tomb…) each carrying how much is still waiting there. Click a spot to narrow the
+  list to it; the list underneath mirrors the board, spot by spot.
 - **Resources** — hand-picked wiki checklists and guides per achievement, plus auto-generated
   YouTube / Google guide searches for every achievement in every game.
 - **Filters** — search, locked/unlocked, missable-only, and sorting by rarity, name, or most

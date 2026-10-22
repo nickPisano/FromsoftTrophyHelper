@@ -31,6 +31,9 @@ pub const ROW_HOVER: egui::Color32 = egui::Color32::from_rgb(38, 33, 25);
 pub const MAP_BG: egui::Color32 = egui::Color32::from_rgb(16, 14, 11);
 pub const MAP_EDGE: egui::Color32 = egui::Color32::from_rgb(78, 67, 48);
 pub const MAP_CLEAR: egui::Color32 = egui::Color32::from_rgb(70, 92, 72);
+pub const MAP_BORDER: egui::Color32 = egui::Color32::from_rgb(58, 50, 36);
+pub const MAP_CARD: egui::Color32 = egui::Color32::from_rgb(34, 29, 22);
+pub const MAP_CARD_CLEAR: egui::Color32 = egui::Color32::from_rgb(26, 34, 27);
 
 const DISPLAY_FAMILY: &str = "display";
 
